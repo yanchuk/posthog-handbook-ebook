@@ -118,10 +118,6 @@ async function optimizeAsset({ buffer, extension, maxWidth = 1400 }) {
     return { buffer: output, extension: '.jpg', mediaType: 'image/jpeg' }
 }
 
-function assetManifestId(manifestHref) {
-    return `asset-${manifestHref.replace(/[^a-zA-Z0-9_-]+/g, '-')}`
-}
-
 async function materializeAssets(assets, epubRoot) {
     const materialized = new Map()
     for (const asset of assets.values()) {
@@ -189,7 +185,6 @@ module.exports = {
     MEDIA_TYPES,
     RASTER_EXTENSIONS,
     SUPPORTED_IMAGE_EXTENSIONS,
-    assetManifestId,
     createDiagramFallbackPng,
     downloadRemoteAsset,
     materializeAssets,

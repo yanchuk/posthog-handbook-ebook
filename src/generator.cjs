@@ -29,8 +29,6 @@ const {
     renderMarkdownTable,
 } = require('./markdown.cjs')
 const {
-    appendExternalLinkNote,
-    relativeHref,
     rewriteHandbookLinks,
     rewriteLinks,
 } = require('./links.cjs')
@@ -192,9 +190,9 @@ module.exports = {
     buildBookCss,
     buildCoverPage,
     buildCreditsPage,
+    buildEpub,
     buildLandingPage,
     buildOpf,
-    buildEpub,
     getChapterHref,
     markdownToXhtml,
     optimizeAsset,
