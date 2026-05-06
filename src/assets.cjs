@@ -118,7 +118,7 @@ async function optimizeAsset({ buffer, extension, maxWidth = 1400 }) {
     return { buffer: output, extension: '.jpg', mediaType: 'image/jpeg' }
 }
 
-async function materializeAssets(assets, epubRoot) {
+async function materializeAssets(assets, epubRoot, errors = []) {
     const materialized = new Map()
     for (const asset of assets.values()) {
         try {
@@ -133,7 +133,8 @@ async function materializeAssets(assets, epubRoot) {
                 manifestHref: finalManifestHref,
                 mediaType: optimized.mediaType,
             })
-        } catch {
+        } catch (err) {
+            errors.push({ kind: 'asset-failed', detail: asset.url || asset.sourcePath, message: err.message })
             materialized.set(asset.key, { ...asset, kind: 'missing', placeholder: `Image unavailable: ${asset.url || asset.sourcePath}` })
         }
     }
@@ -155,7 +156,7 @@ ${escaped}
         .toBuffer()
 }
 
-async function materializeDiagrams(diagrams, epubRoot) {
+async function materializeDiagrams(diagrams, epubRoot, warnings = []) {
     const materialized = new Map()
     for (const diagram of diagrams.values()) {
         const finalPath = path.join(epubRoot, 'OEBPS', diagram.manifestHref)
@@ -171,7 +172,8 @@ async function materializeDiagrams(diagrams, epubRoot) {
                 { cwd: PROJECT_ROOT, stdio: 'ignore' }
             )
             fs.copyFileSync(outputPath, finalPath)
-        } catch {
+        } catch (err) {
+            warnings.push({ kind: 'diagram-fallback', detail: diagram.key, message: err.message })
             fs.writeFileSync(finalPath, await createDiagramFallbackPng(diagram.source))
         } finally {
             fs.rmSync(tempDir, { recursive: true, force: true })

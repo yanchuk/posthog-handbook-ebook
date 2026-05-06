@@ -56,6 +56,8 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}
     const epubRoot = path.join(outputDir, `epub-root-${edition.id}`)
     const assets = new Map()
     const diagrams = new Map()
+    const errors = []
+    const warnings = []
     const generatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
     fs.rmSync(epubRoot, { recursive: true, force: true })
     fs.mkdirSync(epubRoot, { recursive: true })
@@ -92,8 +94,8 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}
         markdownToXhtml(body, { sourcePath: chapter.sourcePath, assets, diagrams })
     }
 
-    const materializedAssets = await materializeAssets(assets, epubRoot)
-    const materializedDiagrams = await materializeDiagrams(diagrams, epubRoot)
+    const materializedAssets = await materializeAssets(assets, epubRoot, errors)
+    const materializedDiagrams = await materializeDiagrams(diagrams, epubRoot, warnings)
     const renderedChapters = chapters.map((chapter) => {
         const markdown = fs.readFileSync(chapter.sourcePath, 'utf8')
         const { data, body } = extractFrontmatter(markdown)
@@ -148,6 +150,8 @@ ${rewriteLinks(markdownToXhtml(body, { sourcePath: chapter.sourcePath, materiali
         generatedAt,
         chapters: renderedChapters.length,
         output: epubPath,
+        errors,
+        warnings,
     }
 }
 
@@ -177,6 +181,9 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
 
     writeFile(path.join(outputDir, '_headers'), buildHeadersFile(results))
 
+    const aggregateErrors = results.flatMap((r) => (r.errors || []).map((e) => ({ edition: r.edition, ...e })))
+    const aggregateWarnings = results.flatMap((r) => (r.warnings || []).map((w) => ({ edition: r.edition, ...w })))
+
     const manifest = {
         title: 'PostHog Handbook',
         generatedAt,
@@ -186,7 +193,11 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
             chapters: r.chapters,
             epubFileName: r.epubFileName,
             coverFileName: r.coverFileName,
+            errorCount: (r.errors || []).length,
+            warningCount: (r.warnings || []).length,
         })),
+        errors: aggregateErrors,
+        warnings: aggregateWarnings,
     }
     writeFile(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 

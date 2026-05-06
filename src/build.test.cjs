@@ -836,3 +836,16 @@ test('Unknown MDX component renders a visible placeholder, not silent drop', () 
     assert.match(html, /Interactive website component omitted from this ebook/)
     assert.match(html, /SomeUnknownComponent/)
 })
+
+test('buildAllEditions tracks errors through the pipeline', () => {
+    const ebook = require('./generator.cjs')
+    assert.equal(typeof ebook.buildAllEditions, 'function')
+    // Source-level assertion: pipeline must collect errors into a list and surface them.
+    const generatorSource = fs.readFileSync(path.join(__dirname, 'generator.cjs'), 'utf8')
+    assert.match(generatorSource, /const errors = \[\]/, 'buildEpub must collect errors into a list')
+    assert.match(generatorSource, /aggregateErrors/, 'buildAllEditions must aggregate errors across editions')
+    assert.match(generatorSource, /errors: aggregateErrors/, 'manifest must include errors')
+
+    const buildSource = fs.readFileSync(path.join(__dirname, 'build.cjs'), 'utf8')
+    assert.match(buildSource, /process\.exitCode = 1/, 'build.cjs must exit non-zero when errors present')
+})
