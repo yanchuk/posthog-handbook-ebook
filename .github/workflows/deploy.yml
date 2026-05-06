@@ -21,7 +21,7 @@ jobs:
           rm -rf posthog.com
           git clone --depth 1 --filter=blob:none --sparse https://github.com/PostHog/posthog.com.git posthog.com
           cd posthog.com
-          git sparse-checkout set contents/handbook static src/navs/index.js
+          git sparse-checkout set --no-cone contents/handbook static src/navs/index.js
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
