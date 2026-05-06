@@ -878,3 +878,14 @@ test('getLogomarkSvgInner returns inner SVG content from posthog-logomark.svg', 
     assert.doesNotMatch(inner, /<svg/i, 'inner content has no nested <svg> tag')
     assert.doesNotMatch(inner, /<\/svg>/i, 'inner content has no closing </svg> tag')
 })
+
+test('buildBookCss styles the new XHTML cover with PostHog brand', () => {
+    const { buildBookCss } = require('./epub.cjs')
+    const css = buildBookCss()
+    assert.match(css, /\.cover-page \{[^}]*background:\s*#eeefe9/i)
+    assert.match(css, /\.cover-mark[^}]*max-width:\s*30%/)
+    assert.match(css, /\.cover-title[^}]*text-transform:\s*uppercase/)
+    assert.match(css, /\.cover-rule[^}]*#f54e00/i)
+    assert.match(css, /\.cover-edition[^}]*#f54e00/i)
+    assert.match(css, /IBM Plex Sans/)
+})

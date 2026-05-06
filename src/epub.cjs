@@ -92,8 +92,23 @@ th { background: #f4f1ea; font-family: sans-serif; }
 .video-embed { border: 1px solid #d8d1c1; background: #f4f1ea; padding: 0.75em; }
 .video-embed figcaption, .caption { color: #666; font-size: 0.9em; font-family: sans-serif; }
 img { max-width: 100%; height: auto; }
-.cover-page { text-align: center; }
-.cover-page img { max-height: 95vh; }
+.cover-page {
+  text-align: center;
+  background: #eeefe9;
+  margin: 0;
+  padding: 14% 8% 8%;
+  min-height: 95vh;
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #151515;
+}
+.cover-mark { margin: 0 auto 5em; max-width: 30%; }
+.cover-mark svg { width: 100%; height: auto; display: block; }
+.cover-title { font-size: 3.4em; font-weight: 700; letter-spacing: -0.02em; line-height: 1; text-transform: uppercase; margin: 0; }
+.cover-title span { display: block; }
+.cover-rule { border: 0; border-top: 2px solid #f54e00; width: 25%; margin: 1.5em auto; }
+.cover-edition { font-size: 1.4em; color: #f54e00; font-weight: 600; margin: 0.6em 0 0.3em; }
+.cover-meta { font-size: 0.95em; color: #5f5f5f; margin: 0.3em 0 1.5em; }
+.cover-footer { font-size: 0.8em; color: #5f5f5f; margin: 4em 0 0; line-height: 1.5; }
 .credits-page { font-family: sans-serif; max-width: 40em; }
 .credits-page h1 { font-size: 2em; }
 .credits-page dl { margin: 1em 0; }
