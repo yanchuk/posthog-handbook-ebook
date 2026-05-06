@@ -624,3 +624,83 @@ test('ebook modules expose focused build primitives', () => {
     assert.equal(typeof require('./epub.cjs').validateXhtml, 'function')
     assert.equal(typeof require('./epub.cjs').validateGeneratedEpubStructure, 'function')
 })
+
+const { getEditionConfig, filterChaptersForEdition, listEditionIds } = require('./editions.cjs')
+
+test('listEditionIds returns full and short', () => {
+    assert.deepEqual(listEditionIds().sort(), ['full', 'short'])
+})
+
+test('full edition keeps all chapters in input order', () => {
+    const chapters = [
+        { slug: '/handbook/company/culture' },
+        { slug: '/handbook/onboarding/new-hire-onboarding' },
+        { slug: '/handbook/engineering/clickhouse/schema' },
+    ]
+    const result = filterChaptersForEdition(chapters, getEditionConfig('full'))
+    assert.deepEqual(result, chapters)
+})
+
+test('short edition includes allowlisted slugs and excludes everything else', () => {
+    // Build a fake input that includes ALL allowlisted slugs (so the guard doesn't fire)
+    // plus extras that should be excluded.
+    const short = getEditionConfig('short')
+    const chapters = [
+        ...short.slugAllowlist.map((slug) => ({ slug })),
+        { slug: '/handbook/onboarding/new-hire-onboarding' },
+        { slug: '/handbook/company/post-mortems' },
+        { slug: '/handbook/engineering/clickhouse/schema' },
+    ]
+    const result = filterChaptersForEdition(chapters, short)
+    const resultSlugs = result.map((c) => c.slug)
+    // All allowlisted slugs must be present.
+    for (const slug of short.slugAllowlist) {
+        assert.ok(resultSlugs.includes(slug), `expected ${slug} in result`)
+    }
+    // None of the excluded slugs may be present.
+    assert.ok(!resultSlugs.includes('/handbook/onboarding/new-hire-onboarding'))
+    assert.ok(!resultSlugs.includes('/handbook/company/post-mortems'))
+    assert.ok(!resultSlugs.includes('/handbook/engineering/clickhouse/schema'))
+})
+
+test('short edition fails the build if any allowlisted slug is missing from input', () => {
+    const chapters = [{ slug: '/handbook/company/culture' }]  // missing the other ~70
+    assert.throws(
+        () => filterChaptersForEdition(chapters, getEditionConfig('short')),
+        /missing.*\/handbook\//
+    )
+})
+
+test('getEditionConfig throws for unknown edition id', () => {
+    assert.throws(() => getEditionConfig('medium'), /unknown edition/i)
+})
+
+test('full edition exposes filenames and OPF title', () => {
+    const full = getEditionConfig('full')
+    assert.equal(full.id, 'full')
+    assert.equal(full.label, 'Full Edition')
+    assert.equal(full.epubFileName, 'posthog-handbook-full.epub')
+    assert.equal(full.coverFileName, 'posthog-handbook-full-cover.jpg')
+    assert.equal(full.opfTitle, 'PostHog Handbook: Full Edition')
+    assert.equal(full.slugAllowlist, undefined)
+})
+
+test('short edition exposes filenames and OPF title plus allowlist', () => {
+    const short = getEditionConfig('short')
+    assert.equal(short.id, 'short')
+    assert.equal(short.label, 'Short Edition')
+    assert.equal(short.epubFileName, 'posthog-handbook-short.epub')
+    assert.equal(short.coverFileName, 'posthog-handbook-short-cover.jpg')
+    assert.equal(short.opfTitle, 'PostHog Handbook: Short Edition')
+    assert.ok(Array.isArray(short.slugAllowlist))
+    assert.ok(short.slugAllowlist.length > 50, 'short allowlist should have ~70 entries')
+})
+
+test('filterChaptersForEdition for short returns chapters in input order, not allowlist order', () => {
+    const short = getEditionConfig('short')
+    // Input order is reversed relative to allowlist
+    const chapters = [...short.slugAllowlist].reverse().map((slug) => ({ slug }))
+    const result = filterChaptersForEdition(chapters, short).map((c) => c.slug)
+    // Result should match input order (reversed allowlist)
+    assert.deepEqual(result, [...short.slugAllowlist].reverse())
+})
