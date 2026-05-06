@@ -268,11 +268,13 @@ async function writeOgImage(outputDir) {
 
 function getFaviconSvg(opts = {}) {
     const logomarkSvgInner = opts.logomarkSvgInner || ''
-    // 32x32 viewBox with cream PostHog handbook background, centered logomark.
-    // Logomark is 50x30; scaled by 0.52 fits with 3px horizontal padding and ~8px vertical centering.
+    // Tiny book icon: cream cover (matches our handbook), orange spine on left
+    // (PostHog brand), PostHog logomark on the cover face. Recognizable down to
+    // 16x16 because the cream + orange-spine pairing reads as "book" at any size.
     return `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-<rect width="32" height="32" rx="4" fill="#eeefe9"/>
-<g transform="translate(3,8) scale(0.52)">${logomarkSvgInner}</g>
+<rect width="32" height="32" rx="3" fill="#eeefe9"/>
+<rect x="0" y="0" width="5" height="32" fill="#F54E00"/>
+<g transform="translate(8,10) scale(0.4)">${logomarkSvgInner}</g>
 </svg>`
 }
 
@@ -284,10 +286,12 @@ async function writeFavicons(outputDir) {
     const png32 = await sharp(Buffer.from(svg)).resize(32, 32).png({ compressionLevel: 9 }).toBuffer()
     writeFile(path.join(outputDir, 'favicon.png'), png32)
 
-    // Apple touch icon: 180x180 with more generous proportions for the larger canvas.
+    // Apple touch icon: 180x180. Same book shape, scaled up — orange spine 22px wide,
+    // logomark at scale 2.2 centered horizontally on the cover face.
     const appleSvg = `<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
 <rect width="180" height="180" rx="22" fill="#eeefe9"/>
-<g transform="translate(20,48) scale(2.8)">${logomarkInner}</g>
+<rect x="0" y="0" width="22" height="180" fill="#F54E00"/>
+<g transform="translate(46,57) scale(2.2)">${logomarkInner}</g>
 </svg>`
     const png180 = await sharp(Buffer.from(appleSvg)).resize(180, 180).png({ compressionLevel: 9 }).toBuffer()
     writeFile(path.join(outputDir, 'apple-touch-icon.png'), png180)
