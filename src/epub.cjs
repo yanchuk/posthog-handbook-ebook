@@ -209,7 +209,6 @@ function getCoverSvg(edition, logomarkSvgInner = '', opts = {}) {
 <text x="800" y="1380" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">HANDBOOK</text>
 <rect x="700" y="1455" width="200" height="6" fill="#F54E00"/>
 <text x="800" y="1590" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="600" fill="#F54E00">${escapeHtml(label)}</text>
-<text x="800" y="1675" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="400" fill="#5F5F5F">${chapters} chapters</text>
 <text x="800" y="2225" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">Unofficial conversion · ${year}</text>
 <text x="800" y="2285" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">ianchuk.com</text>
 </svg>`

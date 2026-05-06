@@ -38,7 +38,6 @@ function buildCoverPage(edition, logomarkSvgInner, opts = {}) {
   <h1 class="cover-title"><span>PostHog</span><span>Handbook</span></h1>
   <hr class="cover-rule" />
   <p class="cover-edition">${escapeHtml(edition.label)}</p>
-  <p class="cover-meta">${Number(edition.chapters)} chapters</p>
   <p class="cover-footer">Unofficial conversion · ${year}<br />ianchuk.com</p>
 </section>`
 }

@@ -729,13 +729,11 @@ test('buildCoverPage emits XHTML with inline logomark, edition label, no JPEG em
     assert.match(fullCover, /<span>PostHog<\/span>/)
     assert.match(fullCover, /<span>Handbook<\/span>/)
     assert.match(fullCover, /Full Edition/)
-    assert.match(fullCover, /313 chapters/)
     assert.match(fullCover, /Unofficial conversion · 2026/)
     assert.match(fullCover, /ianchuk\.com/)
 
     // Short edition variant
     assert.match(shortCover, /Short Edition/)
-    assert.match(shortCover, /75 chapters/)
 })
 
 test('buildCreditsPage embeds the edition label when supplied', () => {
@@ -916,7 +914,6 @@ test('getCoverSvg renders the new PostHog brand layout', () => {
     assert.match(svg, /POSTHOG/, 'has POSTHOG title')
     assert.match(svg, /HANDBOOK/, 'has HANDBOOK title')
     assert.match(svg, /Full Edition/)
-    assert.match(svg, /313 chapters/)
     assert.match(svg, /Unofficial conversion · 2026/)
     assert.match(svg, /ianchuk\.com/)
     assert.match(svg, /<path d="M0 0L1 1Z"/, 'inline logomark paths embedded')
