@@ -910,7 +910,7 @@ test('getCoverSvg renders the new PostHog brand layout', () => {
     const fullEdition = { id: 'full', label: 'Full Edition', chapters: 313 }
     const svg = getCoverSvg(fullEdition, '<path d="M0 0L1 1Z" fill="#F54E00"/>', { year: 2026 })
 
-    assert.match(svg, /<svg[^>]*width="1600"[^>]*height="2560"/)
+    assert.match(svg, /<svg[^>]*width="1600"[^>]*height="2400"/)
     assert.match(svg, /fill="#eeefe9"/i, 'cream background present')
     assert.match(svg, /fill="#F54E00"/i, 'orange accent present')
     assert.match(svg, /POSTHOG/, 'has POSTHOG title')

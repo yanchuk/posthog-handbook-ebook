@@ -202,16 +202,16 @@ function getCoverSvg(edition, logomarkSvgInner = '', opts = {}) {
     const label = edition.label || ''
     const chapters = Number(edition.chapters) || 0
 
-    return `<svg width="1600" height="2560" xmlns="http://www.w3.org/2000/svg">
-<rect width="1600" height="2560" fill="#eeefe9"/>
-<g transform="translate(560,360) scale(9.6)">${logomarkSvgInner}</g>
-<text x="800" y="1280" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">POSTHOG</text>
-<text x="800" y="1480" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">HANDBOOK</text>
-<rect x="700" y="1560" width="200" height="6" fill="#F54E00"/>
-<text x="800" y="1700" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="600" fill="#F54E00">${escapeHtml(label)}</text>
-<text x="800" y="1790" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="400" fill="#5F5F5F">${chapters} chapters</text>
-<text x="800" y="2380" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">Unofficial conversion · ${year}</text>
-<text x="800" y="2440" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">ianchuk.com</text>
+    return `<svg width="1600" height="2400" xmlns="http://www.w3.org/2000/svg">
+<rect width="1600" height="2400" fill="#eeefe9"/>
+<g transform="translate(560,340) scale(9.6)">${logomarkSvgInner}</g>
+<text x="800" y="1180" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">POSTHOG</text>
+<text x="800" y="1380" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">HANDBOOK</text>
+<rect x="700" y="1455" width="200" height="6" fill="#F54E00"/>
+<text x="800" y="1590" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="600" fill="#F54E00">${escapeHtml(label)}</text>
+<text x="800" y="1675" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="400" fill="#5F5F5F">${chapters} chapters</text>
+<text x="800" y="2225" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">Unofficial conversion · ${year}</text>
+<text x="800" y="2285" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">ianchuk.com</text>
 </svg>`
 }
 

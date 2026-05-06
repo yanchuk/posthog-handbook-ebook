@@ -75,7 +75,7 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}
 `
     )
     writeFile(path.join(epubRoot, 'OEBPS/styles/book.css'), buildBookCss())
-    const coverAsset = await writeCoverAssets(outputDir, epubRoot, edition)
+    const coverAsset = await writeCoverAssets(outputDir, epubRoot, { ...edition, chapters: chapters.length })
     const extraDocuments = [
         { id: 'cover', href: 'cover.xhtml' },
         { id: 'credits', href: 'credits.xhtml' },
