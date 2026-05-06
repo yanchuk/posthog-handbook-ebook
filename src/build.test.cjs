@@ -20,7 +20,7 @@ const {
     uniqueOrdered,
     validateXhtml,
     validateGeneratedEpubStructure,
-} = require('./build-handbook-epub.cjs')
+} = require('./build.cjs')
 
 test('builds an EPUB credits page with attribution and source links', () => {
     const html = buildCreditsPage('2026-05-05T20:45:00Z')

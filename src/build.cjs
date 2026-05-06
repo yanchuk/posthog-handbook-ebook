@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const ebook = require('./lib/generator.cjs')
+const ebook = require('./generator.cjs')
 
 if (require.main === module) {
     ebook.buildEpub(ebook.parseArgs(process.argv.slice(2))).then((manifest) => {

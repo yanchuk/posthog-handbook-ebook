@@ -1,7 +1,7 @@
 const path = require('node:path')
 
 const SITE_URL = 'https://posthog.com'
-const PROJECT_ROOT = path.resolve(__dirname, '../../..')
+const PROJECT_ROOT = path.resolve(__dirname, '..')
 const POSTHOG_SITE_DIR = path.join(PROJECT_ROOT, 'posthog.com')
 const DEFAULT_OUTPUT_DIR = path.join(PROJECT_ROOT, 'dist/handbook-ebook')
 const HANDBOOK_DIR = path.join(POSTHOG_SITE_DIR, 'contents/handbook')

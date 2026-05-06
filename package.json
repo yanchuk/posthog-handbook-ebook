@@ -6,9 +6,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "build:ebook": "node scripts/handbook-ebook/build-handbook-epub.cjs",
+    "build:ebook": "node src/build.cjs",
     "deploy:pages": "wrangler pages deploy dist/handbook-ebook --project-name posthog-handbook-ebook",
-    "test:ebook": "node --test scripts/handbook-ebook/*.test.cjs"
+    "test:ebook": "node --test src/*.test.cjs"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
