@@ -974,3 +974,14 @@ test('buildAllEditions writes robots.txt and sitemap.xml', { timeout: 240000 }, 
     assert.match(sitemap, /<loc>https:\/\/posthog-handbook-ebook\.ianchuk\.com\/<\/loc>/)
     fs.rmSync(tmp, { recursive: true, force: true })
 })
+
+test('buildHeadersFile includes security headers and rules for robots.txt and sitemap.xml', () => {
+    const { buildHeadersFile } = require('./epub.cjs')
+    const text = buildHeadersFile([
+        { epubFileName: 'posthog-handbook-full.epub', coverFileName: 'posthog-handbook-full-cover.jpg' },
+    ])
+    assert.match(text, /^\/\*[\s\S]*?X-Frame-Options: DENY/m, 'X-Frame-Options on /*')
+    assert.match(text, /Content-Security-Policy: default-src 'self'/, 'CSP on /*')
+    assert.match(text, /^\/robots\.txt[\s\S]*?Cache-Control: public, max-age=3600/m)
+    assert.match(text, /^\/sitemap\.xml[\s\S]*?Cache-Control: public, max-age=3600/m)
+})
