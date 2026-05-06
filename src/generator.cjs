@@ -35,6 +35,7 @@ const {
     buildNav,
     buildOpf,
     escapeHtml,
+    getLogomarkSvgInner,
     pageTemplate,
     validateGeneratedEpubStructure,
     validateXhtml,
@@ -79,9 +80,14 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}
         { id: 'cover', href: 'cover.xhtml' },
         { id: 'credits', href: 'credits.xhtml' },
     ]
+    const logomarkInner = getLogomarkSvgInner()
+    const generatedYear = new Date(generatedAt).getUTCFullYear()
     writeFile(
         path.join(epubRoot, 'OEBPS/cover.xhtml'),
-        pageTemplate({ title: `PostHog Handbook Cover — ${edition.label}`, body: buildCoverPage(edition.coverFileName, edition.label) })
+        pageTemplate({
+            title: `PostHog Handbook Cover — ${edition.label}`,
+            body: buildCoverPage({ ...edition, chapters: chapters.length }, logomarkInner, { year: generatedYear }),
+        })
     )
     writeFile(
         path.join(epubRoot, 'OEBPS/credits.xhtml'),

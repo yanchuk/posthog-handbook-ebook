@@ -889,3 +889,18 @@ test('buildBookCss styles the new XHTML cover with PostHog brand', () => {
     assert.match(css, /\.cover-edition[^}]*#f54e00/i)
     assert.match(css, /IBM Plex Sans/)
 })
+
+test('full edition cover.xhtml has inline SVG and no JPEG <img>', { timeout: 180000 }, async () => {
+    if (!fs.existsSync(path.join(__dirname, '..', 'posthog.com', 'contents/handbook'))) {
+        return
+    }
+    const ebook = require('./generator.cjs')
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cover-test-'))
+    await ebook.buildEpub({ outputDir: tmp, limit: 5, edition: require('./editions.cjs').getEditionConfig('full') })
+    const coverXhtml = fs.readFileSync(path.join(tmp, 'epub-root-full', 'OEBPS', 'cover.xhtml'), 'utf8')
+    assert.match(coverXhtml, /<svg/, 'cover.xhtml has inline SVG')
+    assert.match(coverXhtml, /PostHog/, 'cover.xhtml has PostHog text')
+    assert.match(coverXhtml, /Handbook/, 'cover.xhtml has Handbook text')
+    assert.doesNotMatch(coverXhtml, /<img[^>]*src="assets\/cover\//, 'cover.xhtml has no JPEG embed')
+    fs.rmSync(tmp, { recursive: true, force: true })
+})
