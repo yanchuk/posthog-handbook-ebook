@@ -1,0 +1,217 @@
+const fs = require('node:fs')
+const path = require('node:path')
+const sharp = require('sharp')
+const { COVER_FILE_NAME, POSTHOG_SITE_DIR } = require('./config.cjs')
+
+function escapeHtml(value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+}
+
+function validateGeneratedEpubStructure(files) {
+    const errors = []
+    const fileNames = new Set(files.keys())
+    for (const [fileName, contents] of files.entries()) {
+        if (/\.xhtml$/i.test(fileName)) {
+            errors.push(...validateXhtml(contents).errors.map((error) => `${fileName}: ${error}`))
+        }
+        for (const match of contents.matchAll(/href="([^"]+)"/g)) {
+            const href = match[1]
+            if (href.startsWith('/')) {
+                errors.push(`${fileName} contains root-relative href ${href}`)
+            }
+            if (/^(javascript|data|file):/i.test(href)) {
+                errors.push(`${fileName} contains unsafe href ${href}`)
+            }
+            const hrefPath = href.split('#')[0]
+            if (/\.xhtml$/i.test(hrefPath) && !/^[a-z][a-z0-9+.-]*:/i.test(hrefPath)) {
+                const target = path.posix.normalize(path.posix.join(path.posix.dirname(fileName), hrefPath))
+                if (!fileNames.has(target)) {
+                    errors.push(`${fileName} links to missing internal file ${target}`)
+                }
+            }
+        }
+    }
+    return { errors }
+}
+
+function validateXhtml(contents) {
+    const errors = []
+    const withoutEntities = contents.replace(/&(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);/g, '')
+    const amp = withoutEntities.match(/&/)
+    if (amp) errors.push(`Unescaped ampersand at character ${amp.index}`)
+    return { errors }
+}
+
+function writeFile(filePath, contents) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, contents)
+}
+
+function buildBookCss() {
+    return `body { font-family: Georgia, serif; line-height: 1.55; color: #1d1d1d; }
+h1, h2, h3 { font-family: sans-serif; line-height: 1.2; }
+h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+h2 + *, h3 + *, h4 + * { break-before: avoid; page-break-before: avoid; }
+.numbered-section { break-before: page; page-break-before: always; }
+code, pre { font-family: monospace; }
+pre { background: #f4f1ea; padding: 0.8em; white-space: pre-wrap; }
+blockquote { border-left: 0.25em solid #d7c7a7; margin-left: 0; padding-left: 1em; color: #444; }
+.source { color: #666; font-size: 0.85em; font-family: sans-serif; }
+.component-placeholder, .image-placeholder { color: #666; font-style: italic; }
+.component-placeholder { border: 1px solid #d8d1c1; background: #f4f1ea; padding: 0.75em; margin: 1em 0; font-style: normal; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+thead, tr, th, td { break-inside: avoid; page-break-inside: avoid; }
+th, td { border: 1px solid #d8d1c1; padding: 0.45em; vertical-align: top; }
+th { background: #f4f1ea; font-family: sans-serif; }
+.external-link-note { color: #666; font-size: 0.9em; }
+.logic-operator { font-family: sans-serif; font-weight: bold; color: #666; margin: 0.5em 0; }
+.table-cards { margin: 1em 0; }
+.table-card { border: 1px solid #d8d1c1; padding: 0.75em; margin: 0.75em 0; break-inside: avoid; page-break-inside: avoid; }
+.table-card h3 { margin-top: 0; }
+.table-card dt { font-family: sans-serif; font-weight: bold; margin-top: 0.5em; }
+.table-card dd { margin-left: 0; }
+.color-swatch { display: inline-block; width: 0.85em; height: 0.85em; border: 1px solid #999; }
+.diagram { break-inside: avoid; page-break-inside: avoid; margin: 1em 0; }
+.diagram figcaption { color: #666; font-size: 0.85em; font-family: sans-serif; }
+.product-screenshot, .video-embed { break-inside: avoid; page-break-inside: avoid; margin: 1em 0; }
+.video-embed { border: 1px solid #d8d1c1; background: #f4f1ea; padding: 0.75em; }
+.video-embed figcaption, .caption { color: #666; font-size: 0.9em; font-family: sans-serif; }
+img { max-width: 100%; height: auto; }
+.cover-page { text-align: center; }
+.cover-page img { max-height: 95vh; }
+.credits-page { font-family: sans-serif; max-width: 40em; }
+.credits-page h1 { font-size: 2em; }
+.credits-page dl { margin: 1em 0; }
+.credits-page dt { font-weight: bold; margin-top: 0.75em; }
+.credits-page dd { margin-left: 0; }
+`
+}
+
+function pageTemplate({ title, body, stylesheetHref = 'styles/book.css' }) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <title>${escapeHtml(title)}</title>
+  <link rel="stylesheet" type="text/css" href="${escapeHtml(stylesheetHref)}" />
+</head>
+<body>
+${body}
+</body>
+</html>
+`
+}
+
+function buildNav(chapters) {
+    const items = chapters.map((chapter) => `<li><a href="${chapter.href}">${escapeHtml(chapter.title)}</a></li>`).join('\n')
+    return pageTemplate({
+        title: 'PostHog Handbook',
+        body: `<nav epub:type="toc" id="toc"><h1>PostHog Handbook</h1><ol>${items}</ol></nav>`,
+    })
+}
+
+function assetManifestId(manifestHref) {
+    return `asset-${manifestHref.replace(/[^a-zA-Z0-9_-]+/g, '-')}`
+}
+
+function buildOpf(chapters, generatedDate, assets = [], extraDocuments = []) {
+    const extraManifestItems = extraDocuments
+        .map((document) => `<item id="${document.id}" href="${document.href}" media-type="application/xhtml+xml" />`)
+        .join('\n    ')
+    const manifestItems = chapters
+        .map((chapter) => `<item id="${chapter.id}" href="${chapter.href}" media-type="application/xhtml+xml" />`)
+        .join('\n    ')
+    const assetItems = assets
+        .map((asset) => {
+            const properties = asset.properties ? ` properties="${escapeHtml(asset.properties)}"` : ''
+            return `<item id="${assetManifestId(asset.manifestHref)}" href="${asset.manifestHref}" media-type="${asset.mediaType}"${properties} />`
+        })
+        .join('\n    ')
+    const spineItems = [...extraDocuments, ...chapters].map((item) => `<itemref idref="${item.id}" />`).join('\n    ')
+    return `<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="book-id">posthog-handbook-full-preview</dc:identifier>
+    <dc:title>PostHog Handbook</dc:title>
+    <dc:language>en</dc:language>
+    <dc:creator>PostHog</dc:creator>
+    <meta property="dcterms:modified">${generatedDate}</meta>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav" />
+    <item id="style" href="styles/book.css" media-type="text/css" />
+    ${extraManifestItems}
+    ${manifestItems}
+    ${assetItems}
+  </manifest>
+  <spine>
+    ${spineItems}
+  </spine>
+</package>
+`
+}
+
+function getCoverSvg() {
+    const logoPath = path.join(POSTHOG_SITE_DIR, 'static/brand/posthog-logo-white@2x.png')
+    const logoData = fs.existsSync(logoPath) ? fs.readFileSync(logoPath).toString('base64') : ''
+    const logoImage = logoData
+        ? `<image href="data:image/png;base64,${logoData}" x="560" y="1890" width="480" height="92" preserveAspectRatio="xMidYMid meet" opacity="0.72" />`
+        : `<text x="800" y="1950" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#cfd9e8">PostHog</text>`
+    return `<svg width="1600" height="2560" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="cover" x1="0" x2="0" y1="0" y2="1">
+    <stop offset="0" stop-color="#0768d8"/>
+    <stop offset="0.52" stop-color="#083b86"/>
+    <stop offset="1" stop-color="#021432"/>
+  </linearGradient>
+  <linearGradient id="spine" x1="0" x2="1" y1="0" y2="0">
+    <stop offset="0" stop-color="#012a5f"/>
+    <stop offset="0.5" stop-color="#0b6ddf"/>
+    <stop offset="1" stop-color="#011a3a"/>
+  </linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="30" stdDeviation="28" flood-color="#000" flood-opacity="0.35"/>
+  </filter>
+</defs>
+<rect width="1600" height="2560" fill="#eeefe9"/>
+<g filter="url(#shadow)">
+  <rect x="145" y="130" width="1310" height="2300" rx="22" fill="url(#cover)"/>
+  <rect x="145" y="130" width="70" height="2300" rx="22" fill="url(#spine)" opacity="0.9"/>
+  <rect x="230" y="220" width="1140" height="2100" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
+  <text x="800" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">PostHog</text>
+  <text x="800" y="880" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">Handbook</text>
+  ${logoImage}
+  <text x="800" y="2200" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff" opacity="0.58">Unofficial EPUB conversion</text>
+</g>
+</svg>`
+}
+
+async function writeCoverAssets(outputDir, epubRoot) {
+    const coverBuffer = await sharp(Buffer.from(getCoverSvg())).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
+    const epubManifestHref = `assets/cover/${COVER_FILE_NAME}`
+    writeFile(path.join(epubRoot, 'OEBPS', epubManifestHref), coverBuffer)
+    writeFile(path.join(outputDir, COVER_FILE_NAME), coverBuffer)
+    return {
+        manifestHref: epubManifestHref,
+        mediaType: 'image/jpeg',
+        properties: 'cover-image',
+    }
+}
+
+module.exports = {
+    buildBookCss,
+    buildNav,
+    buildOpf,
+    escapeHtml,
+    getCoverSvg,
+    pageTemplate,
+    validateGeneratedEpubStructure,
+    validateXhtml,
+    writeCoverAssets,
+    writeFile,
+}

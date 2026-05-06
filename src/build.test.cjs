@@ -606,3 +606,21 @@ test('creates stable chapter filenames from handbook slugs', () => {
 test('deduplicates while preserving first-seen order', () => {
     assert.deepEqual(uniqueOrdered(['a', 'b', 'a', 'c', 'b']), ['a', 'b', 'c'])
 })
+
+test('ebook modules expose focused build primitives', () => {
+    assert.equal(typeof require('./source.cjs').getOrderedChapters, 'function')
+    assert.equal(typeof require('./source.cjs').slugFromFile, 'function')
+    assert.equal(typeof require('./source.cjs').fileFromSlug, 'function')
+    assert.equal(typeof require('./source.cjs').getChapterHref, 'function')
+    assert.equal(typeof require('./markdown.cjs').markdownToXhtml, 'function')
+    assert.equal(typeof require('./markdown.cjs').renderMarkdownTable, 'function')
+    assert.equal(typeof require('./links.cjs').rewriteLinks, 'function')
+    assert.equal(typeof require('./links.cjs').rewriteHandbookLinks, 'function')
+    assert.equal(typeof require('./assets.cjs').optimizeAsset, 'function')
+    assert.equal(typeof require('./assets.cjs').resolveAsset, 'function')
+    assert.equal(typeof require('./assets.cjs').materializeAssets, 'function')
+    assert.equal(typeof require('./epub.cjs').buildOpf, 'function')
+    assert.equal(typeof require('./epub.cjs').buildBookCss, 'function')
+    assert.equal(typeof require('./epub.cjs').validateXhtml, 'function')
+    assert.equal(typeof require('./epub.cjs').validateGeneratedEpubStructure, 'function')
+})
