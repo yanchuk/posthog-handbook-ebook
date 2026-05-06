@@ -2,6 +2,9 @@
   "name": "posthog-handbook-ebook",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build:ebook": "node scripts/handbook-ebook/build-handbook-epub.cjs",
     "deploy:pages": "wrangler pages deploy dist/handbook-ebook --project-name posthog-handbook-ebook",
@@ -22,7 +25,6 @@
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^11.14.0",
-    "vitest": "^4.1.5",
     "wrangler": "^4.88.0"
   }
 }
