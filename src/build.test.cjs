@@ -38,7 +38,7 @@ test('adds cover and credits documents to the OPF before handbook chapters', () 
     const opf = buildOpf(
         [{ id: 'chapter-1', href: 'chapters/example.xhtml' }],
         '2026-05-05T20:45:00Z',
-        [{ manifestHref: 'assets/cover/posthog-handbook-cover.jpg', mediaType: 'image/jpeg', properties: 'cover-image' }],
+        [{ manifestHref: 'assets/cover/posthog-handbook-full-cover.jpg', mediaType: 'image/jpeg', properties: 'cover-image' }],
         [
             { id: 'cover', href: 'cover.xhtml' },
             { id: 'credits', href: 'credits.xhtml' },
@@ -47,7 +47,7 @@ test('adds cover and credits documents to the OPF before handbook chapters', () 
 
     assert.match(opf, /<item id="cover" href="cover\.xhtml" media-type="application\/xhtml\+xml" \/>/)
     assert.match(opf, /<item id="credits" href="credits\.xhtml" media-type="application\/xhtml\+xml" \/>/)
-    assert.match(opf, /href="assets\/cover\/posthog-handbook-cover\.jpg" media-type="image\/jpeg" properties="cover-image"/)
+    assert.match(opf, /href="assets\/cover\/posthog-handbook-full-cover\.jpg" media-type="image\/jpeg" properties="cover-image"/)
     assert.match(opf, /<itemref idref="cover" \/>\s*<itemref idref="credits" \/>\s*<itemref idref="chapter-1" \/>/)
 })
 
