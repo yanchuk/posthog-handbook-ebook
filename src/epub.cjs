@@ -12,6 +12,16 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;')
 }
 
+function getLogomarkSvgInner() {
+    const logomarkPath = path.join(POSTHOG_SITE_DIR, 'static/brand/posthog-logomark.svg')
+    const svg = fs.readFileSync(logomarkPath, 'utf8')
+    const match = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i)
+    if (!match) {
+        throw new Error(`Could not extract inner SVG content from ${logomarkPath}`)
+    }
+    return match[1].trim()
+}
+
 function validateGeneratedEpubStructure(files) {
     const errors = []
     const fileNames = new Set(files.keys())
@@ -242,6 +252,7 @@ module.exports = {
     buildOpf,
     escapeHtml,
     getCoverSvg,
+    getLogomarkSvgInner,
     pageTemplate,
     validateGeneratedEpubStructure,
     validateXhtml,

@@ -849,3 +849,15 @@ test('buildAllEditions tracks errors through the pipeline', () => {
     const buildSource = fs.readFileSync(path.join(__dirname, 'build.cjs'), 'utf8')
     assert.match(buildSource, /process\.exitCode = 1/, 'build.cjs must exit non-zero when errors present')
 })
+
+test('getLogomarkSvgInner returns inner SVG content from posthog-logomark.svg', () => {
+    const { getLogomarkSvgInner } = require('./epub.cjs')
+    const inner = getLogomarkSvgInner()
+    assert.ok(typeof inner === 'string', 'inner content is a string')
+    assert.ok(inner.length > 500, `inner content should be substantial, got ${inner.length} chars`)
+    assert.match(inner, /#1D4AFF/i, 'preserves blue brand color')
+    assert.match(inner, /#F9BD2B/i, 'preserves yellow brand color')
+    assert.match(inner, /#F54E00/i, 'preserves orange brand color')
+    assert.doesNotMatch(inner, /<svg/i, 'inner content has no nested <svg> tag')
+    assert.doesNotMatch(inner, /<\/svg>/i, 'inner content has no closing </svg> tag')
+})
