@@ -55,26 +55,45 @@ test('builds a static landing page with both editions, credits, and share links'
     const html = buildLandingPage({
         generatedAt: '2026-05-05T20:45:00Z',
         editions: [
-            { id: 'full', label: 'Full Edition', chapters: 313, epubFileName: 'posthog-handbook-full.epub' },
-            { id: 'short', label: 'Short Edition', chapters: 70, epubFileName: 'posthog-handbook-short.epub' },
+            { id: 'full', label: 'Full Edition', chapters: 313, epubFileName: 'posthog-handbook-full.epub', sizeBytes: 16_700_000 },
+            { id: 'short', label: 'Short Edition', chapters: 75, epubFileName: 'posthog-handbook-short.epub', sizeBytes: 1_050_000 },
         ],
         coverFileName: 'posthog-handbook-full-cover.jpg',
         pageUrl: 'https://posthog-handbook-ebook.ianchuk.com',
     })
 
-    assert.match(html, /PostHog Handbook Ebook/)
+    assert.match(html, /PostHog Handbook, offline\./)
+    assert.match(html, /Read it on a plane, on a Kindle, in bed\./)
+    assert.match(html, /Full Edition/)
+    assert.match(html, /Short Edition/)
+    assert.match(html, /Everything PostHog has published\./)
+    assert.match(html, /The good stuff for outsiders/)
+    assert.match(html, /313 chapters/)
+    assert.match(html, /75 chapters/)
     assert.match(html, /href="\.\/posthog-handbook-full\.epub"/)
     assert.match(html, /href="\.\/posthog-handbook-short\.epub"/)
-    assert.match(html, /Download Full Edition/)
-    assert.match(html, /Download Short Edition/)
-    assert.match(html, /313/)
-    assert.match(html, /70/)
-    assert.match(html, /Thanks to the PostHog team for the handbook\. All rights belong to them\./)
-    assert.match(html, /https:\/\/posthog\.com\/handbook/)
-    assert.match(html, /https:\/\/github\.com\/yanchuk\/posthog-handbook-ebook/)
-    assert.match(html, /https:\/\/ianchuk\.com/)
+    assert.match(html, /Download Full \(\.epub\)/)
+    assert.match(html, /Download Short \(\.epub\)/)
+    assert.match(html, /Refreshed every Monday/)
+    assert.match(html, /Made by .*Oleksii Ianchuk/)
+    assert.match(html, /handbook is © PostHog/)
+    assert.match(html, /github\.com\/yanchuk\/posthog-handbook-ebook/)
     assert.match(html, /twitter\.com\/intent\/tweet/)
     assert.match(html, /linkedin\.com\/sharing\/share-offsite/)
+    assert.match(html, /<meta name="description" content="[^"]*EPUB[^"]*"/)
+    assert.match(html, /<link rel="canonical" href="https:\/\/posthog-handbook-ebook\.ianchuk\.com\/?"/)
+    assert.match(html, /<meta property="og:title"/)
+    assert.match(html, /<meta property="og:description"/)
+    assert.match(html, /<meta property="og:image"/)
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/)
+    assert.match(html, /<meta name="theme-color" content="#f54e00"/)
+    assert.match(html, /<script type="application\/ld\+json">/)
+    assert.match(html, /"@type":\s*"WebSite"/)
+    assert.match(html, /"@type":\s*"Book"/)
+    assert.match(html, /"bookEdition":\s*"Full Edition"/)
+    assert.match(html, /"bookEdition":\s*"Short Edition"/)
+    assert.match(html, /"encodingFormat":\s*"application\/epub\+zip"/)
+    assert.match(html, /"isAccessibleForFree":\s*true/)
     assert.match(html, /2026-05-05T20:45:00Z/)
     assert.doesNotMatch(html, /\{time|TODO|undefined/)
 })

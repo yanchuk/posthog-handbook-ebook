@@ -176,7 +176,13 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
     const results = []
     for (const id of ids) {
         const edition = getEditionConfig(id)
-        results.push(await buildEpub({ outputDir, limit, edition }))
+        const result = await buildEpub({ outputDir, limit, edition })
+        try {
+            result.sizeBytes = fs.statSync(result.output).size
+        } catch {
+            result.sizeBytes = undefined
+        }
+        results.push(result)
     }
 
     const generatedAt = results[0]?.generatedAt || new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
