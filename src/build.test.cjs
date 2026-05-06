@@ -1046,3 +1046,36 @@ test('landing page references og-image.jpg with proper dimensions', () => {
     assert.match(html, /<meta property="og:image:height" content="630"/)
     assert.match(html, /<meta name="twitter:image" content="https:\/\/posthog-handbook-ebook\.ianchuk\.com\/og-image\.jpg"/)
 })
+
+test('getFaviconSvg renders a 32x32 PostHog-branded icon', () => {
+    const { getFaviconSvg } = require('./epub.cjs')
+    const svg = getFaviconSvg({ logomarkSvgInner: '<path d="M0 0L1 1Z" fill="#F54E00"/>' })
+    assert.match(svg, /<svg[^>]*width="32"[^>]*height="32"/)
+    assert.match(svg, /fill="#eeefe9"/i, 'cream background')
+    assert.match(svg, /<path d="M0 0L1 1Z"/, 'inline logomark embedded')
+})
+
+test('landing page references favicon.svg, favicon.png, and apple-touch-icon.png', () => {
+    const html = buildLandingPage({
+        generatedAt: '2026-05-05T20:45:00Z',
+        editions: [
+            { id: 'full', label: 'Full Edition', chapters: 313, epubFileName: 'posthog-handbook-full.epub', sizeBytes: 16_700_000 },
+            { id: 'short', label: 'Short Edition', chapters: 75, epubFileName: 'posthog-handbook-short.epub', sizeBytes: 1_050_000 },
+        ],
+        coverFileName: 'posthog-handbook-full-cover.jpg',
+        pageUrl: 'https://posthog-handbook-ebook.ianchuk.com',
+    })
+    assert.match(html, /<link rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/)
+    assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\/favicon\.png"/)
+    assert.match(html, /<link rel="apple-touch-icon" sizes="180x180" href="\/apple-touch-icon\.png"/)
+})
+
+test('buildHeadersFile includes cache rules for favicon files', () => {
+    const { buildHeadersFile } = require('./epub.cjs')
+    const text = buildHeadersFile([
+        { epubFileName: 'posthog-handbook-full.epub', coverFileName: 'posthog-handbook-full-cover.jpg' },
+    ])
+    assert.match(text, /^\/favicon\.svg[\s\S]*?Cache-Control: public, max-age=86400/m)
+    assert.match(text, /^\/favicon\.png[\s\S]*?Cache-Control: public, max-age=86400/m)
+    assert.match(text, /^\/apple-touch-icon\.png[\s\S]*?Cache-Control: public, max-age=86400/m)
+})

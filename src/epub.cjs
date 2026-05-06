@@ -266,6 +266,33 @@ async function writeOgImage(outputDir) {
     writeFile(path.join(outputDir, 'og-image.jpg'), buffer)
 }
 
+function getFaviconSvg(opts = {}) {
+    const logomarkSvgInner = opts.logomarkSvgInner || ''
+    // 32x32 viewBox with cream PostHog handbook background, centered logomark.
+    // Logomark is 50x30; scaled by 0.52 fits with 3px horizontal padding and ~8px vertical centering.
+    return `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+<rect width="32" height="32" rx="4" fill="#eeefe9"/>
+<g transform="translate(3,8) scale(0.52)">${logomarkSvgInner}</g>
+</svg>`
+}
+
+async function writeFavicons(outputDir) {
+    const logomarkInner = getLogomarkSvgInner()
+    const svg = getFaviconSvg({ logomarkSvgInner: logomarkInner })
+    writeFile(path.join(outputDir, 'favicon.svg'), svg)
+
+    const png32 = await sharp(Buffer.from(svg)).resize(32, 32).png({ compressionLevel: 9 }).toBuffer()
+    writeFile(path.join(outputDir, 'favicon.png'), png32)
+
+    // Apple touch icon: 180x180 with more generous proportions for the larger canvas.
+    const appleSvg = `<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+<rect width="180" height="180" rx="22" fill="#eeefe9"/>
+<g transform="translate(20,48) scale(2.8)">${logomarkInner}</g>
+</svg>`
+    const png180 = await sharp(Buffer.from(appleSvg)).resize(180, 180).png({ compressionLevel: 9 }).toBuffer()
+    writeFile(path.join(outputDir, 'apple-touch-icon.png'), png180)
+}
+
 function buildHeadersFile(editions) {
     const epubRules = editions
         .map(
@@ -293,6 +320,15 @@ ${coverRules}
 /og-image.jpg
   Cache-Control: public, max-age=86400
 
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+/favicon.png
+  Cache-Control: public, max-age=86400
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+
 /robots.txt
   Cache-Control: public, max-age=3600
 
@@ -308,12 +344,14 @@ module.exports = {
     buildOpf,
     escapeHtml,
     getCoverSvg,
+    getFaviconSvg,
     getLogomarkSvgInner,
     getOgImageSvg,
     pageTemplate,
     validateGeneratedEpubStructure,
     validateXhtml,
     writeCoverAssets,
+    writeFavicons,
     writeFile,
     writeOgImage,
 }

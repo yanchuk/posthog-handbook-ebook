@@ -157,6 +157,9 @@ function buildLandingPage({ generatedAt, editions, coverFileName, pageUrl }) {
   <meta name="author" content="${CONVERTER_NAME}">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${trimmedUrl}/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#f54e00">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="PostHog Handbook Ebook">
@@ -217,7 +220,7 @@ ${cards}
     </div>
     <p class="refresh">Refreshed every Monday at 8am UTC from <a href="${ORIGINAL_HANDBOOK_URL}">posthog.com/handbook</a>.</p>
     <hr class="rule" />
-    <p class="credit">Made by <a href="${CONVERTER_URL}">${CONVERTER_NAME}</a>. The handbook is © PostHog — we're just putting it in a different file format. <a href="${REPO_URL}">Source on GitHub</a>.</p>
+    <p class="credit">Made by <a href="${CONVERTER_URL}">${CONVERTER_NAME}</a>. The handbook is © PostHog — we're just putting it in a different file format.<br /><a href="${REPO_URL}">Source on GitHub</a>.</p>
     <div class="share" aria-label="Share">
       <a href="https://twitter.com/intent/tweet?text=${shareText}&amp;url=${shareUrl}">Share on X</a>
       <a href="https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}">Share on LinkedIn</a>
