@@ -4,3 +4,4 @@ dist/
 node_modules/
 posthog.com/
 .agents/
+.claude/
