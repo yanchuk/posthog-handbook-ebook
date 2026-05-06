@@ -770,3 +770,69 @@ test('buildAllEditions is exported from generator and build', () => {
     assert.equal(typeof gen.buildAllEditions, 'function')
     assert.equal(typeof build.buildAllEditions, 'function')
 })
+
+test('GIF assets pass through optimizeAsset unchanged', async () => {
+    const buffer = fs.readFileSync(path.join(__dirname, 'fixtures/animated.gif'))
+    const result = await optimizeAsset({ buffer, extension: '.gif' })
+    assert.equal(result.extension, '.gif')
+    assert.equal(result.mediaType, 'image/gif')
+    assert.equal(result.buffer.length, buffer.length)
+})
+
+test('SVG assets pass through optimizeAsset unchanged', async () => {
+    const buffer = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#000"/></svg>')
+    const result = await optimizeAsset({ buffer, extension: '.svg' })
+    assert.equal(result.extension, '.svg')
+    assert.equal(result.mediaType, 'image/svg+xml')
+})
+
+test('large no-alpha PNG is converted to compressed JPEG under 1MB', async () => {
+    // Generate fixture in-memory (avoids committing a multi-MB binary).
+    // 2400x2400 RGB with no alpha and zero compression yields >1MB of input.
+    const buffer = await sharp({
+        create: { width: 2400, height: 2400, channels: 3, background: { r: 200, g: 50, b: 50 } },
+    }).png({ compressionLevel: 0 }).toBuffer()
+    assert.ok(buffer.length > 1_000_000, `fixture should be >1MB, got ${buffer.length}`)
+    const result = await optimizeAsset({ buffer, extension: '.png' })
+    assert.equal(result.extension, '.jpg')
+    assert.equal(result.mediaType, 'image/jpeg')
+    assert.ok(result.buffer.length < 1_000_000, `expected <1MB after compression, got ${result.buffer.length}`)
+})
+
+test('PNG with alpha stays a PNG', async () => {
+    const alphaPng = await sharp({
+        create: { width: 100, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    }).png().toBuffer()
+    const result = await optimizeAsset({ buffer: alphaPng, extension: '.png' })
+    assert.equal(result.extension, '.png')
+    assert.equal(result.mediaType, 'image/png')
+})
+
+test('YouTube iframe becomes a thumbnail link card with watch URL', () => {
+    const html = markdownToXhtml('<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Demo"></iframe>')
+    assert.match(html, /Watch on YouTube/)
+    assert.match(html, /youtube\.com\/watch\?v=dQw4w9WgXcQ/)
+})
+
+test('ProductScreenshot MDX component renders an image figure', () => {
+    const html = markdownToXhtml('<ProductScreenshot imageLight="/images/screenshot.png" alt="App home" />')
+    assert.match(html, /<figure class="product-screenshot">/)
+})
+
+test('ProductVideo MDX component renders an external video link card', () => {
+    const html = markdownToXhtml('<ProductVideo videoLight="https://example.com/video.mp4" />')
+    assert.match(html, /Open video/)
+    assert.match(html, /video-embed--link/)
+})
+
+test('WistiaEmbed renders a Wistia link card', () => {
+    const html = markdownToXhtml('<WistiaEmbed mediaId="abc123" />')
+    assert.match(html, /posthog\.wistia\.com\/medias\/abc123/)
+    assert.match(html, /Open video/)
+})
+
+test('Unknown MDX component renders a visible placeholder, not silent drop', () => {
+    const html = markdownToXhtml('<SomeUnknownComponent prop="x" />')
+    assert.match(html, /Interactive website component omitted from this ebook/)
+    assert.match(html, /SomeUnknownComponent/)
+})
