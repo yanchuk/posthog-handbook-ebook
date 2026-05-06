@@ -962,3 +962,18 @@ test('buildSitemapXml emits a single-URL sitemap with lastmod', () => {
     assert.match(xml, /<loc>https:\/\/posthog-handbook-ebook\.ianchuk\.com\/<\/loc>/)
     assert.match(xml, /<lastmod>2026-05-06<\/lastmod>/)
 })
+
+test('buildAllEditions writes robots.txt and sitemap.xml', { timeout: 240000 }, async () => {
+    if (!fs.existsSync(path.join(__dirname, '..', 'posthog.com', 'contents/handbook'))) {
+        return
+    }
+    const ebook = require('./generator.cjs')
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'seo-test-'))
+    await ebook.buildAllEditions({ outputDir: tmp, limit: 10, only: 'full' })
+    const robots = fs.readFileSync(path.join(tmp, 'robots.txt'), 'utf8')
+    const sitemap = fs.readFileSync(path.join(tmp, 'sitemap.xml'), 'utf8')
+    assert.match(robots, /User-agent: \*/)
+    assert.match(robots, /Sitemap: https:\/\/posthog-handbook-ebook\.ianchuk\.com\/sitemap\.xml/)
+    assert.match(sitemap, /<loc>https:\/\/posthog-handbook-ebook\.ianchuk\.com\/<\/loc>/)
+    fs.rmSync(tmp, { recursive: true, force: true })
+})

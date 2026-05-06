@@ -8,7 +8,7 @@ const {
     DEFAULT_OUTPUT_DIR,
     PUBLIC_PAGE_URL,
 } = require('./config.cjs')
-const { buildCoverPage, buildCreditsPage, buildLandingPage } = require('./pages.cjs')
+const { buildCoverPage, buildCreditsPage, buildLandingPage, buildRobotsTxt, buildSitemapXml } = require('./pages.cjs')
 const {
     getChapterHref,
     getOrderedChapters,
@@ -193,6 +193,8 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
     )
 
     writeFile(path.join(outputDir, '_headers'), buildHeadersFile(results))
+    writeFile(path.join(outputDir, 'robots.txt'), buildRobotsTxt(PUBLIC_PAGE_URL))
+    writeFile(path.join(outputDir, 'sitemap.xml'), buildSitemapXml(PUBLIC_PAGE_URL, generatedAt))
 
     const aggregateErrors = results.flatMap((r) => (r.errors || []).map((e) => ({ edition: r.edition, ...e })))
     const aggregateWarnings = results.flatMap((r) => (r.warnings || []).map((w) => ({ edition: r.edition, ...w })))
