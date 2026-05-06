@@ -160,7 +160,7 @@ ${rewriteLinks(markdownToXhtml(body, { sourcePath: chapter.sourcePath, materiali
     childProcess.execFileSync('zip', ['-Xr9D', epubPath, 'META-INF', 'OEBPS'], { cwd: epubRoot, stdio: 'ignore' })
 
     return {
-        edition: edition.id,
+        id: edition.id,
         label: edition.label,
         opfTitle: edition.opfTitle,
         epubFileName: edition.epubFileName,
@@ -209,14 +209,14 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
     await writeOgImage(outputDir)
     await writeFavicons(outputDir)
 
-    const aggregateErrors = results.flatMap((r) => (r.errors || []).map((e) => ({ edition: r.edition, ...e })))
-    const aggregateWarnings = results.flatMap((r) => (r.warnings || []).map((w) => ({ edition: r.edition, ...w })))
+    const aggregateErrors = results.flatMap((r) => (r.errors || []).map((e) => ({ edition: r.id, ...e })))
+    const aggregateWarnings = results.flatMap((r) => (r.warnings || []).map((w) => ({ edition: r.id, ...w })))
 
     const manifest = {
         title: 'PostHog Handbook',
         generatedAt,
         editions: results.map((r) => ({
-            id: r.edition,
+            id: r.id,
             label: r.label,
             chapters: r.chapters,
             epubFileName: r.epubFileName,

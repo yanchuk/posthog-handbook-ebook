@@ -100,7 +100,7 @@ function buildLandingPage({ generatedAt, editions, coverFileName, pageUrl }) {
             const buttonLabel = edition.id === 'full' ? 'Full' : 'Short'
             return `      <article class="card">
         <p class="card-label">${escapeHtml(edition.label)}</p>
-        <p class="card-desc">${escapeHtml(desc)} ${edition.chapters} chapters.</p>
+        <p class="card-desc">${escapeHtml(desc)}</p>
         ${extra}
         <a class="download" href="./${escapeHtml(edition.epubFileName)}" aria-label="Download ${escapeHtml(edition.label)} EPUB, ${edition.chapters} chapters${size ? `, ${escapeHtml(size)}` : ''}">Download ${buttonLabel} (.epub)</a>
         <p class="card-meta">${sizeMeta}Updated ${escapeHtml(updatedDate)}</p>
