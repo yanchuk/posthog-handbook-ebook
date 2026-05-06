@@ -1016,3 +1016,33 @@ test('buildHeadersFile includes security headers and rules for robots.txt and si
     assert.match(text, /^\/robots\.txt[\s\S]*?Cache-Control: public, max-age=3600/m)
     assert.match(text, /^\/sitemap\.xml[\s\S]*?Cache-Control: public, max-age=3600/m)
 })
+
+test('getOgImageSvg renders a 1200x630 PostHog-branded card', () => {
+    const { getOgImageSvg } = require('./epub.cjs')
+    const svg = getOgImageSvg({ logomarkSvgInner: '<path d="M0 0L1 1Z" fill="#F54E00"/>' })
+    assert.match(svg, /<svg[^>]*width="1200"[^>]*height="630"/)
+    assert.match(svg, /fill="#eeefe9"/i, 'cream background')
+    assert.match(svg, /fill="#F54E00"/i, 'orange accent')
+    assert.match(svg, /PostHog/)
+    assert.match(svg, /Handbook,/)
+    assert.match(svg, /offline\./)
+    assert.match(svg, /Two editions in EPUB · refreshed weekly/)
+    assert.match(svg, /posthog-handbook-ebook\.ianchuk\.com/)
+    assert.match(svg, /<path d="M0 0L1 1Z"/, 'inline logomark embedded')
+})
+
+test('landing page references og-image.jpg with proper dimensions', () => {
+    const html = buildLandingPage({
+        generatedAt: '2026-05-05T20:45:00Z',
+        editions: [
+            { id: 'full', label: 'Full Edition', chapters: 313, epubFileName: 'posthog-handbook-full.epub', sizeBytes: 16_700_000 },
+            { id: 'short', label: 'Short Edition', chapters: 75, epubFileName: 'posthog-handbook-short.epub', sizeBytes: 1_050_000 },
+        ],
+        coverFileName: 'posthog-handbook-full-cover.jpg',
+        pageUrl: 'https://posthog-handbook-ebook.ianchuk.com',
+    })
+    assert.match(html, /<meta property="og:image" content="https:\/\/posthog-handbook-ebook\.ianchuk\.com\/og-image\.jpg"/)
+    assert.match(html, /<meta property="og:image:width" content="1200"/)
+    assert.match(html, /<meta property="og:image:height" content="630"/)
+    assert.match(html, /<meta name="twitter:image" content="https:\/\/posthog-handbook-ebook\.ianchuk\.com\/og-image\.jpg"/)
+})

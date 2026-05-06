@@ -41,6 +41,7 @@ const {
     validateXhtml,
     writeCoverAssets,
     writeFile,
+    writeOgImage,
 } = require('./epub.cjs')
 const {
     filterChaptersForEdition,
@@ -204,6 +205,7 @@ async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } 
     writeFile(path.join(outputDir, '_headers'), buildHeadersFile(results))
     writeFile(path.join(outputDir, 'robots.txt'), buildRobotsTxt(PUBLIC_PAGE_URL))
     writeFile(path.join(outputDir, 'sitemap.xml'), buildSitemapXml(PUBLIC_PAGE_URL, generatedAt))
+    await writeOgImage(outputDir)
 
     const aggregateErrors = results.flatMap((r) => (r.errors || []).map((e) => ({ edition: r.edition, ...e })))
     const aggregateWarnings = results.flatMap((r) => (r.warnings || []).map((w) => ({ edition: r.edition, ...w })))

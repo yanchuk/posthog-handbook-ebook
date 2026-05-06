@@ -162,12 +162,16 @@ function buildLandingPage({ generatedAt, editions, coverFileName, pageUrl }) {
   <meta property="og:site_name" content="PostHog Handbook Ebook">
   <meta property="og:title" content="PostHog Handbook EPUB">
   <meta property="og:description" content="${escapeHtml(description)}">
-  <meta property="og:image" content="${trimmedUrl}/${escapeHtml(coverFileName)}">
+  <meta property="og:image" content="${trimmedUrl}/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="PostHog Handbook ebook — offline EPUB conversion">
   <meta property="og:url" content="${trimmedUrl}/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="PostHog Handbook EPUB">
   <meta name="twitter:description" content="${escapeHtml(description)}">
-  <meta name="twitter:image" content="${trimmedUrl}/${escapeHtml(coverFileName)}">
+  <meta name="twitter:image" content="${trimmedUrl}/og-image.jpg">
+  <meta name="twitter:image:alt" content="PostHog Handbook ebook — offline EPUB conversion">
   <script type="application/ld+json">${JSON.stringify(jsonLd, null, 2)}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

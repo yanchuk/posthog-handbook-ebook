@@ -244,6 +244,28 @@ async function writeCoverAssets(outputDir, epubRoot, edition) {
     }
 }
 
+function getOgImageSvg(opts = {}) {
+    const logomarkSvgInner = opts.logomarkSvgInner || ''
+    return `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="630" fill="#eeefe9"/>
+<g transform="translate(80,72) scale(2.4)">${logomarkSvgInner}</g>
+<text x="80" y="280" font-family="Arial, sans-serif" font-size="100" font-weight="700" fill="#151515" letter-spacing="-3">PostHog</text>
+<text x="80" y="380" font-family="Arial, sans-serif" font-size="100" font-weight="700" fill="#151515" letter-spacing="-3">Handbook,</text>
+<text x="80" y="465" font-family="Arial, sans-serif" font-size="80" font-weight="700" fill="#F54E00" letter-spacing="-3">offline.</text>
+<rect x="80" y="500" width="180" height="5" fill="#F54E00"/>
+<text x="80" y="555" font-family="Arial, sans-serif" font-size="26" font-weight="400" fill="#5F5F5F">Two editions in EPUB · refreshed weekly</text>
+<text x="1120" y="595" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="400" fill="#999999">posthog-handbook-ebook.ianchuk.com</text>
+</svg>`
+}
+
+async function writeOgImage(outputDir) {
+    const logomarkInner = getLogomarkSvgInner()
+    const buffer = await sharp(Buffer.from(getOgImageSvg({ logomarkSvgInner: logomarkInner })))
+        .jpeg({ quality: 88, mozjpeg: true })
+        .toBuffer()
+    writeFile(path.join(outputDir, 'og-image.jpg'), buffer)
+}
+
 function buildHeadersFile(editions) {
     const epubRules = editions
         .map(
@@ -268,6 +290,9 @@ ${epubRules}
 
 ${coverRules}
 
+/og-image.jpg
+  Cache-Control: public, max-age=86400
+
 /robots.txt
   Cache-Control: public, max-age=3600
 
@@ -284,9 +309,11 @@ module.exports = {
     escapeHtml,
     getCoverSvg,
     getLogomarkSvgInner,
+    getOgImageSvg,
     pageTemplate,
     validateGeneratedEpubStructure,
     validateXhtml,
     writeCoverAssets,
     writeFile,
+    writeOgImage,
 }
