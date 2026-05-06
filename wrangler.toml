@@ -1,0 +1,3 @@
+name = "posthog-handbook-ebook"
+pages_build_output_dir = "dist/handbook-ebook"
+compatibility_date = "2026-05-06"

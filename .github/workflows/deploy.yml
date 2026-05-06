@@ -1,0 +1,54 @@
+name: Build and deploy ebook
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout converter repo
+        uses: actions/checkout@v4
+
+      - name: Fetch PostHog handbook source
+        run: |
+          rm -rf posthog.com
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/PostHog/posthog.com.git posthog.com
+          cd posthog.com
+          git sparse-checkout set contents/handbook static src/navs/index.js
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test ebook generator
+        run: pnpm test:ebook
+
+      - name: Build ebook and landing page
+        run: pnpm build:ebook
+
+      - name: Validate EPUB archive
+        run: unzip -t dist/handbook-ebook/posthog-handbook-full-preview.epub
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/handbook-ebook --project-name posthog-handbook-ebook
