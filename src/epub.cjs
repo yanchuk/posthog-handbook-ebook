@@ -182,42 +182,21 @@ function buildOpf(chapters, generatedDate, assets = [], extraDocuments = [], opt
 `
 }
 
-function getCoverSvg(editionLabel = '') {
-    const logoPath = path.join(POSTHOG_SITE_DIR, 'static/brand/posthog-logo-white@2x.png')
-    const logoData = fs.existsSync(logoPath) ? fs.readFileSync(logoPath).toString('base64') : ''
-    const logoImage = logoData
-        ? `<image href="data:image/png;base64,${logoData}" x="560" y="1890" width="480" height="92" preserveAspectRatio="xMidYMid meet" opacity="0.72" />`
-        : `<text x="800" y="1950" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#cfd9e8">PostHog</text>`
-    const labelLine = editionLabel
-        ? `<text x="800" y="1040" text-anchor="middle" font-family="Arial, sans-serif" font-size="68" font-weight="500" fill="#cfd9e8" opacity="0.85">${escapeHtml(editionLabel)}</text>`
-        : ''
+function getCoverSvg(edition, logomarkSvgInner = '', opts = {}) {
+    const year = opts.year || new Date().getUTCFullYear()
+    const label = edition.label || ''
+    const chapters = Number(edition.chapters) || 0
+
     return `<svg width="1600" height="2560" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <linearGradient id="cover" x1="0" x2="0" y1="0" y2="1">
-    <stop offset="0" stop-color="#0768d8"/>
-    <stop offset="0.52" stop-color="#083b86"/>
-    <stop offset="1" stop-color="#021432"/>
-  </linearGradient>
-  <linearGradient id="spine" x1="0" x2="1" y1="0" y2="0">
-    <stop offset="0" stop-color="#012a5f"/>
-    <stop offset="0.5" stop-color="#0b6ddf"/>
-    <stop offset="1" stop-color="#011a3a"/>
-  </linearGradient>
-  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-    <feDropShadow dx="0" dy="30" stdDeviation="28" flood-color="#000" flood-opacity="0.35"/>
-  </filter>
-</defs>
 <rect width="1600" height="2560" fill="#eeefe9"/>
-<g filter="url(#shadow)">
-  <rect x="145" y="130" width="1310" height="2300" rx="22" fill="url(#cover)"/>
-  <rect x="145" y="130" width="70" height="2300" rx="22" fill="url(#spine)" opacity="0.9"/>
-  <rect x="230" y="220" width="1140" height="2100" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
-  <text x="800" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">PostHog</text>
-  <text x="800" y="880" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">Handbook</text>
-  ${labelLine}
-  ${logoImage}
-  <text x="800" y="2200" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff" opacity="0.58">Unofficial EPUB conversion</text>
-</g>
+<g transform="translate(560,360) scale(9.6)">${logomarkSvgInner}</g>
+<text x="800" y="1280" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">POSTHOG</text>
+<text x="800" y="1480" text-anchor="middle" font-family="Arial, sans-serif" font-size="200" font-weight="700" fill="#151515" letter-spacing="-3">HANDBOOK</text>
+<rect x="700" y="1560" width="200" height="6" fill="#F54E00"/>
+<text x="800" y="1700" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="600" fill="#F54E00">${escapeHtml(label)}</text>
+<text x="800" y="1790" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="400" fill="#5F5F5F">${chapters} chapters</text>
+<text x="800" y="2380" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">Unofficial conversion · ${year}</text>
+<text x="800" y="2440" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="400" fill="#5F5F5F">ianchuk.com</text>
 </svg>`
 }
 
@@ -225,7 +204,9 @@ async function writeCoverAssets(outputDir, epubRoot, edition) {
     if (!edition || !edition.coverFileName) {
         throw new Error('writeCoverAssets requires an edition with a coverFileName')
     }
-    const coverBuffer = await sharp(Buffer.from(getCoverSvg(edition.label))).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
+    const logomarkInner = getLogomarkSvgInner()
+    const year = new Date().getUTCFullYear()
+    const coverBuffer = await sharp(Buffer.from(getCoverSvg(edition, logomarkInner, { year }))).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
     const epubManifestHref = `assets/cover/${edition.coverFileName}`
     writeFile(path.join(epubRoot, 'OEBPS', epubManifestHref), coverBuffer)
     writeFile(path.join(outputDir, edition.coverFileName), coverBuffer)
