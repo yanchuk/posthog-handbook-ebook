@@ -101,8 +101,33 @@ ${downloads}
 `
 }
 
+function buildRobotsTxt(pageUrl) {
+    const trimmed = pageUrl.replace(/\/$/, '')
+    return `User-agent: *
+Allow: /
+Sitemap: ${trimmed}/sitemap.xml
+`
+}
+
+function buildSitemapXml(pageUrl, generatedAt) {
+    const trimmed = pageUrl.replace(/\/$/, '')
+    const lastmod = String(generatedAt).slice(0, 10)
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${trimmed}/</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`
+}
+
 module.exports = {
     buildCoverPage,
     buildCreditsPage,
     buildLandingPage,
+    buildRobotsTxt,
+    buildSitemapXml,
 }

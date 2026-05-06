@@ -945,3 +945,20 @@ test('buildOpf includes Dublin Core descriptive metadata', () => {
     assert.match(opf, /<dc:publisher>ianchuk\.com<\/dc:publisher>/)
     assert.match(opf, /<dc:rights>Content © PostHog Inc\., conversion © Oleksii Ianchuk \(MIT\)\.<\/dc:rights>/)
 })
+
+test('buildRobotsTxt allows all and points at sitemap', () => {
+    const { buildRobotsTxt } = require('./pages.cjs')
+    const text = buildRobotsTxt('https://posthog-handbook-ebook.ianchuk.com')
+    assert.match(text, /^User-agent: \*$/m)
+    assert.match(text, /^Allow: \/$/m)
+    assert.match(text, /^Sitemap: https:\/\/posthog-handbook-ebook\.ianchuk\.com\/sitemap\.xml$/m)
+})
+
+test('buildSitemapXml emits a single-URL sitemap with lastmod', () => {
+    const { buildSitemapXml } = require('./pages.cjs')
+    const xml = buildSitemapXml('https://posthog-handbook-ebook.ianchuk.com', '2026-05-06T10:00:00Z')
+    assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/)
+    assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/)
+    assert.match(xml, /<loc>https:\/\/posthog-handbook-ebook\.ianchuk\.com\/<\/loc>/)
+    assert.match(xml, /<lastmod>2026-05-06<\/lastmod>/)
+})
