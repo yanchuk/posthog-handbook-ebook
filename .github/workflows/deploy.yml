@@ -34,6 +34,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Java (for EPUBCheck)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -43,8 +49,17 @@ jobs:
       - name: Build ebook and landing page
         run: pnpm build:ebook
 
-      - name: Validate EPUB archive
-        run: unzip -t dist/handbook-ebook/posthog-handbook-full-preview.epub
+      - name: Validate EPUB archive integrity
+        run: |
+          unzip -t dist/handbook-ebook/posthog-handbook-full.epub
+          unzip -t dist/handbook-ebook/posthog-handbook-short.epub
+
+      - name: Validate EPUB spec compliance with EPUBCheck
+        run: |
+          curl -L -o epubcheck.zip https://github.com/w3c/epubcheck/releases/download/v5.1.0/epubcheck-5.1.0.zip
+          unzip -q epubcheck.zip
+          java -jar epubcheck-5.1.0/epubcheck.jar dist/handbook-ebook/posthog-handbook-full.epub
+          java -jar epubcheck-5.1.0/epubcheck.jar dist/handbook-ebook/posthog-handbook-short.epub
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
