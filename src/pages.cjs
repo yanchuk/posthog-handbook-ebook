@@ -31,9 +31,16 @@ ${labelLine}<p><a href="${ORIGINAL_HANDBOOK_URL}">Original handbook</a></p>
 </section>`
 }
 
-function buildCoverPage(coverFileName, editionLabel = '') {
-    const label = editionLabel ? `<p class="cover-edition-label">${escapeHtml(editionLabel)}</p>` : ''
-    return `<section class="cover-page"><img src="assets/cover/${escapeHtml(coverFileName)}" alt="PostHog Handbook cover" />${label}</section>`
+function buildCoverPage(edition, logomarkSvgInner, opts = {}) {
+    const year = opts.year || new Date().getUTCFullYear()
+    return `<section class="cover-page">
+  <div class="cover-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 30" role="img" aria-label="PostHog logomark">${logomarkSvgInner}</svg></div>
+  <h1 class="cover-title"><span>PostHog</span><span>Handbook</span></h1>
+  <hr class="cover-rule" />
+  <p class="cover-edition">${escapeHtml(edition.label)}</p>
+  <p class="cover-meta">${Number(edition.chapters)} chapters</p>
+  <p class="cover-footer">Unofficial conversion · ${year}<br />ianchuk.com</p>
+</section>`
 }
 
 function buildLandingPage({ generatedAt, editions, coverFileName, pageUrl }) {

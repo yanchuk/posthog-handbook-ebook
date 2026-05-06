@@ -711,14 +711,31 @@ test('filterChaptersForEdition for short returns chapters in input order, not al
     assert.deepEqual(result, [...short.slugAllowlist].reverse())
 })
 
-test('buildCoverPage embeds the edition label', () => {
+test('buildCoverPage emits XHTML with inline logomark, edition label, no JPEG embed', () => {
     const { buildCoverPage } = require('./pages.cjs')
-    const fullCover = buildCoverPage('posthog-handbook-full-cover.jpg', 'Full Edition')
-    const shortCover = buildCoverPage('posthog-handbook-short-cover.jpg', 'Short Edition')
+    const fullEdition = { id: 'full', label: 'Full Edition', chapters: 313 }
+    const shortEdition = { id: 'short', label: 'Short Edition', chapters: 75 }
+    const logomarkInner = '<path d="M0 0L1 1Z" fill="#F54E00"/>'
+
+    const fullCover = buildCoverPage(fullEdition, logomarkInner, { year: 2026 })
+    const shortCover = buildCoverPage(shortEdition, logomarkInner, { year: 2026 })
+
+    // Inline SVG present, no JPEG embed
+    assert.match(fullCover, /<svg[^>]*viewBox="0 0 50 30"/i)
+    assert.match(fullCover, /<path d="M0 0L1 1Z"/)
+    assert.doesNotMatch(fullCover, /<img[^>]*src="assets\/cover\//)
+
+    // Title block + edition label + chapter count + footer
+    assert.match(fullCover, /<span>PostHog<\/span>/)
+    assert.match(fullCover, /<span>Handbook<\/span>/)
     assert.match(fullCover, /Full Edition/)
+    assert.match(fullCover, /313 chapters/)
+    assert.match(fullCover, /Unofficial conversion · 2026/)
+    assert.match(fullCover, /ianchuk\.com/)
+
+    // Short edition variant
     assert.match(shortCover, /Short Edition/)
-    assert.match(fullCover, /posthog-handbook-full-cover\.jpg/)
-    assert.match(shortCover, /posthog-handbook-short-cover\.jpg/)
+    assert.match(shortCover, /75 chapters/)
 })
 
 test('buildCreditsPage embeds the edition label when supplied', () => {
