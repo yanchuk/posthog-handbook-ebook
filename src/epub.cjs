@@ -145,7 +145,18 @@ function assetManifestId(manifestHref) {
 }
 
 function buildOpf(chapters, generatedDate, assets = [], extraDocuments = [], options = {}) {
-    const { title = 'PostHog Handbook', bookId = 'posthog-handbook' } = options
+    const {
+        title = 'PostHog Handbook',
+        bookId = 'posthog-handbook',
+        description = '',
+        subjects = [],
+        publisher = '',
+        rights = '',
+    } = options
+    const subjectTags = subjects.map((s) => `    <dc:subject>${escapeHtml(s)}</dc:subject>`).join('\n')
+    const descriptionTag = description ? `    <dc:description>${escapeHtml(description)}</dc:description>` : ''
+    const publisherTag = publisher ? `    <dc:publisher>${escapeHtml(publisher)}</dc:publisher>` : ''
+    const rightsTag = rights ? `    <dc:rights>${escapeHtml(rights)}</dc:rights>` : ''
     const extraManifestItems = extraDocuments
         .map((document) => `<item id="${document.id}" href="${document.href}" media-type="application/xhtml+xml" />`)
         .join('\n    ')
@@ -166,6 +177,10 @@ function buildOpf(chapters, generatedDate, assets = [], extraDocuments = [], opt
     <dc:title>${escapeHtml(title)}</dc:title>
     <dc:language>en</dc:language>
     <dc:creator>PostHog</dc:creator>
+${descriptionTag}
+${subjectTags}
+${publisherTag}
+${rightsTag}
     <meta property="dcterms:modified">${generatedDate}</meta>
   </metadata>
   <manifest>

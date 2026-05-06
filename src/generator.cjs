@@ -121,7 +121,14 @@ ${rewriteLinks(markdownToXhtml(body, { sourcePath: chapter.sourcePath, materiali
             generatedAt,
             [coverAsset, ...materializedAssets.values(), ...materializedDiagrams.values()].filter((asset) => asset.mediaType),
             extraDocuments,
-            { title: edition.opfTitle, bookId: `posthog-handbook-${edition.id}` }
+            {
+                title: edition.opfTitle,
+                bookId: `posthog-handbook-${edition.id}`,
+                description: `Unofficial offline EPUB conversion of the public PostHog handbook (${edition.label}).`,
+                subjects: ['Business handbook', 'Company culture', 'PostHog', 'Startup'],
+                publisher: 'ianchuk.com',
+                rights: 'Content © PostHog Inc., conversion © Oleksii Ianchuk (MIT).',
+            }
         )
     )
 

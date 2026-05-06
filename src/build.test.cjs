@@ -921,3 +921,27 @@ test('getCoverSvg renders the new PostHog brand layout', () => {
     assert.match(svg, /ianchuk\.com/)
     assert.match(svg, /<path d="M0 0L1 1Z"/, 'inline logomark paths embedded')
 })
+
+test('buildOpf includes Dublin Core descriptive metadata', () => {
+    const { buildOpf } = require('./epub.cjs')
+    const opf = buildOpf(
+        [{ id: 'chapter-1', href: 'chapters/example.xhtml' }],
+        '2026-05-06T10:00:00Z',
+        [],
+        [],
+        {
+            title: 'PostHog Handbook: Full Edition',
+            bookId: 'posthog-handbook-full',
+            description: 'Unofficial offline EPUB conversion of the public PostHog handbook.',
+            subjects: ['Business handbook', 'Company culture', 'PostHog'],
+            publisher: 'ianchuk.com',
+            rights: 'Content © PostHog Inc., conversion © Oleksii Ianchuk (MIT).',
+        }
+    )
+    assert.match(opf, /<dc:description>Unofficial offline EPUB conversion of the public PostHog handbook\.<\/dc:description>/)
+    assert.match(opf, /<dc:subject>Business handbook<\/dc:subject>/)
+    assert.match(opf, /<dc:subject>Company culture<\/dc:subject>/)
+    assert.match(opf, /<dc:subject>PostHog<\/dc:subject>/)
+    assert.match(opf, /<dc:publisher>ianchuk\.com<\/dc:publisher>/)
+    assert.match(opf, /<dc:rights>Content © PostHog Inc\., conversion © Oleksii Ianchuk \(MIT\)\.<\/dc:rights>/)
+})
