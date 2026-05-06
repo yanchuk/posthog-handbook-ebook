@@ -14,20 +14,47 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;')
 }
 
-function buildCreditsPage(generatedAt, editionLabel = '') {
-    const labelLine = editionLabel ? `<p class="edition-label">${escapeHtml(editionLabel)}</p>\n` : ''
-    return `<section class="credits-page">
-<h1>PostHog Handbook</h1>
-${labelLine}<p><a href="${ORIGINAL_HANDBOOK_URL}">Original handbook</a></p>
-<p>Thanks to the PostHog team for the handbook. All rights belong to them.</p>
-<dl>
-  <dt>Converted to Ebook by ${CONVERTER_NAME}</dt>
-  <dd><a href="${CONVERTER_URL}">${CONVERTER_URL}</a></dd>
-  <dt>Contribute</dt>
-  <dd><a href="${REPO_URL}">${REPO_URL}</a></dd>
-  <dt>Updated</dt>
-  <dd>${escapeHtml(generatedAt)}</dd>
-</dl>
+function formatHumanDate(iso) {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return String(iso)
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`
+}
+
+const CREDITS_TAGLINES = {
+    full: 'An offline EPUB conversion of the complete public PostHog handbook. Every chapter PostHog has published.',
+    short: 'A curated subset of the PostHog handbook focused on strategy, culture, brand, marketing, and sales-enablement — the parts most useful to people outside the company. Internal procedures (onboarding, post-mortems, hiring workflows) and engineering deep-dives (ClickHouse internals, infrastructure runbooks) are excluded.',
+}
+
+function buildCreditsPage(edition, generatedAt, logomarkSvgInner = '') {
+    const label = edition && edition.label ? edition.label : ''
+    const editionId = edition && edition.id ? edition.id : ''
+    const chapterCount = edition && edition.chapters ? Number(edition.chapters) : null
+    const labelText = chapterCount
+        ? `${label} · ${chapterCount} chapters`
+        : label
+    const labelLine = labelText ? `\n  <p class="credits-edition">${escapeHtml(labelText)}</p>` : ''
+    const mark = logomarkSvgInner
+        ? `\n  <div class="credits-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 30" role="img" aria-label="PostHog logomark">${logomarkSvgInner}</svg></div>`
+        : ''
+    const tagline = CREDITS_TAGLINES[editionId] || 'An offline EPUB conversion of the public PostHog handbook.'
+    const repoShort = REPO_URL.replace(/^https?:\/\//, '')
+    const converterShort = CONVERTER_URL.replace(/^https?:\/\//, '')
+    return `<section class="credits-page">${mark}
+  <h1 class="credits-title">PostHog Handbook</h1>${labelLine}
+  <hr class="credits-rule" />
+  <p class="credits-tagline">${escapeHtml(tagline)}</p>
+  <p class="credits-thanks">Thanks to the PostHog team for the handbook. All rights belong to them.</p>
+  <dl class="credits-meta">
+    <dt>Original</dt>
+    <dd><a href="${ORIGINAL_HANDBOOK_URL}">posthog.com/handbook</a></dd>
+    <dt>Made by</dt>
+    <dd>${escapeHtml(CONVERTER_NAME)} · <a href="${CONVERTER_URL}">${escapeHtml(converterShort)}</a></dd>
+    <dt>Source</dt>
+    <dd><a href="${REPO_URL}">${escapeHtml(repoShort)}</a></dd>
+    <dt>Updated</dt>
+    <dd>${escapeHtml(formatHumanDate(generatedAt))}</dd>
+  </dl>
 </section>`
 }
 

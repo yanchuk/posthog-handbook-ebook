@@ -91,7 +91,10 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}
     )
     writeFile(
         path.join(epubRoot, 'OEBPS/credits.xhtml'),
-        pageTemplate({ title: 'About this Ebook', body: buildCreditsPage(generatedAt, edition.label) })
+        pageTemplate({
+            title: 'About this Ebook',
+            body: buildCreditsPage({ ...edition, chapters: chapters.length }, generatedAt, logomarkInner),
+        })
     )
 
     for (const chapter of chapters) {

@@ -96,24 +96,37 @@ img { max-width: 100%; height: auto; }
   text-align: center;
   background: #eeefe9;
   margin: 0;
-  padding: 14% 8% 8%;
-  min-height: 95vh;
+  padding: 8% 8%;
   font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #151515;
 }
-.cover-mark { margin: 0 auto 5em; max-width: 30%; }
+.cover-mark { margin: 0 auto 3em; max-width: 26%; }
 .cover-mark svg { width: 100%; height: auto; display: block; }
-.cover-title { font-size: 3.4em; font-weight: 700; letter-spacing: -0.02em; line-height: 1; text-transform: uppercase; margin: 0; }
+.cover-title { font-size: 3.2em; font-weight: 700; letter-spacing: -0.02em; line-height: 1; text-transform: uppercase; margin: 0; }
 .cover-title span { display: block; }
-.cover-rule { border: 0; border-top: 2px solid #f54e00; width: 25%; margin: 1.5em auto; }
-.cover-edition { font-size: 1.4em; color: #f54e00; font-weight: 600; margin: 0.6em 0 0.3em; }
+.cover-rule { border: 0; border-top: 2px solid #f54e00; width: 22%; margin: 1.4em auto; }
+.cover-edition { font-size: 1.3em; color: #f54e00; font-weight: 600; margin: 0.6em 0 0.3em; }
 .cover-meta { font-size: 0.95em; color: #5f5f5f; margin: 0.3em 0 1.5em; }
-.cover-footer { font-size: 0.8em; color: #5f5f5f; margin: 4em 0 0; line-height: 1.5; }
-.credits-page { font-family: sans-serif; max-width: 40em; }
-.credits-page h1 { font-size: 2em; }
-.credits-page dl { margin: 1em 0; }
-.credits-page dt { font-weight: bold; margin-top: 0.75em; }
-.credits-page dd { margin-left: 0; }
+.cover-footer { font-size: 0.78em; color: #5f5f5f; margin: 3em 0 0; line-height: 1.5; }
+.credits-page {
+  background: #eeefe9;
+  margin: 0;
+  padding: 8% 9%;
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #151515;
+}
+.credits-mark { max-width: 70px; margin: 0 0 2em; }
+.credits-mark svg { width: 100%; height: auto; display: block; }
+.credits-title { font-size: 1.7em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
+.credits-edition { font-size: 0.85em; color: #f54e00; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; margin: 0.4em 0 0; }
+.credits-rule { border: 0; border-top: 2px solid #f54e00; width: 3em; margin: 1.6em 0; }
+.credits-tagline { font-size: 1.02em; line-height: 1.55; margin: 1em 0; max-width: 30em; color: #151515; }
+.credits-thanks { font-size: 0.95em; line-height: 1.55; color: #5f5f5f; margin: 1em 0 0; max-width: 30em; }
+.credits-meta { margin: 2.5em 0 0; max-width: 30em; }
+.credits-meta dt { font-size: 0.72em; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5f5f5f; margin-top: 1.2em; }
+.credits-meta dt:first-child { margin-top: 0; }
+.credits-meta dd { margin: 0.2em 0 0; font-size: 0.95em; color: #151515; }
+.credits-meta a { color: #151515; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 `
 }
 

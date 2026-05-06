@@ -23,14 +23,17 @@ const {
 } = require('./build.cjs')
 
 test('builds an EPUB credits page with attribution and source links', () => {
-    const html = buildCreditsPage('2026-05-05T20:45:00Z')
+    const edition = { id: 'full', label: 'Full Edition', chapters: 313 }
+    const html = buildCreditsPage(edition, '2026-05-05T20:45:00Z')
 
     assert.match(html, /Thanks to the PostHog team for the handbook\. All rights belong to them\./)
     assert.match(html, /href="https:\/\/posthog\.com\/handbook"/)
-    assert.match(html, /Converted to Ebook by Oleksii Ianchuk/)
+    assert.match(html, /Oleksii Ianchuk/)
     assert.match(html, /href="https:\/\/ianchuk\.com"/)
     assert.match(html, /href="https:\/\/github\.com\/yanchuk\/posthog-handbook-ebook"/)
-    assert.match(html, /2026-05-05T20:45:00Z/)
+    assert.match(html, /May 5, 2026/)
+    assert.match(html, /Full Edition/)
+    assert.match(html, /313 chapters/)
     assert.deepEqual(validateXhtml(`<?xml version="1.0"?><html><body>${html}</body></html>`).errors, [])
 })
 
@@ -755,12 +758,21 @@ test('buildCoverPage emits XHTML with inline logomark, edition label, no JPEG em
     assert.match(shortCover, /Short Edition/)
 })
 
-test('buildCreditsPage embeds the edition label when supplied', () => {
+test('buildCreditsPage embeds edition label, chapter count, and edition-specific tagline', () => {
     const { buildCreditsPage } = require('./pages.cjs')
-    const withLabel = buildCreditsPage('2026-05-06T10:00:00Z', 'Short Edition')
-    const withoutLabel = buildCreditsPage('2026-05-06T10:00:00Z')
-    assert.match(withLabel, /Short Edition/)
-    assert.doesNotMatch(withoutLabel, /Edition/)
+    const fullEdition = { id: 'full', label: 'Full Edition', chapters: 313 }
+    const shortEdition = { id: 'short', label: 'Short Edition', chapters: 75 }
+
+    const fullCredits = buildCreditsPage(fullEdition, '2026-05-06T10:00:00Z')
+    assert.match(fullCredits, /Full Edition/)
+    assert.match(fullCredits, /313 chapters/)
+    assert.match(fullCredits, /Every chapter PostHog has published/)
+
+    const shortCredits = buildCreditsPage(shortEdition, '2026-05-06T10:00:00Z')
+    assert.match(shortCredits, /Short Edition/)
+    assert.match(shortCredits, /75 chapters/)
+    assert.match(shortCredits, /strategy, culture, brand, marketing/)
+    assert.match(shortCredits, /Internal procedures.*are excluded/)
 })
 
 test('buildHeadersFile emits content-type and cache rules per edition', () => {
@@ -900,7 +912,7 @@ test('buildBookCss styles the new XHTML cover with PostHog brand', () => {
     const { buildBookCss } = require('./epub.cjs')
     const css = buildBookCss()
     assert.match(css, /\.cover-page \{[^}]*background:\s*#eeefe9/i)
-    assert.match(css, /\.cover-mark[^}]*max-width:\s*30%/)
+    assert.match(css, /\.cover-mark[^}]*max-width:\s*\d+%/)
     assert.match(css, /\.cover-title[^}]*text-transform:\s*uppercase/)
     assert.match(css, /\.cover-rule[^}]*#f54e00/i)
     assert.match(css, /\.cover-edition[^}]*#f54e00/i)
