@@ -1,7 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const sharp = require('sharp')
-const { COVER_FILE_NAME, POSTHOG_SITE_DIR } = require('./config.cjs')
+const { POSTHOG_SITE_DIR } = require('./config.cjs')
 
 function escapeHtml(value) {
     return value
@@ -119,7 +119,8 @@ function assetManifestId(manifestHref) {
     return `asset-${manifestHref.replace(/[^a-zA-Z0-9_-]+/g, '-')}`
 }
 
-function buildOpf(chapters, generatedDate, assets = [], extraDocuments = []) {
+function buildOpf(chapters, generatedDate, assets = [], extraDocuments = [], options = {}) {
+    const { title = 'PostHog Handbook', bookId = 'posthog-handbook' } = options
     const extraManifestItems = extraDocuments
         .map((document) => `<item id="${document.id}" href="${document.href}" media-type="application/xhtml+xml" />`)
         .join('\n    ')
@@ -136,8 +137,8 @@ function buildOpf(chapters, generatedDate, assets = [], extraDocuments = []) {
     return `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="book-id">posthog-handbook-full-preview</dc:identifier>
-    <dc:title>PostHog Handbook</dc:title>
+    <dc:identifier id="book-id">${escapeHtml(bookId)}</dc:identifier>
+    <dc:title>${escapeHtml(title)}</dc:title>
     <dc:language>en</dc:language>
     <dc:creator>PostHog</dc:creator>
     <meta property="dcterms:modified">${generatedDate}</meta>
@@ -156,12 +157,15 @@ function buildOpf(chapters, generatedDate, assets = [], extraDocuments = []) {
 `
 }
 
-function getCoverSvg() {
+function getCoverSvg(editionLabel = '') {
     const logoPath = path.join(POSTHOG_SITE_DIR, 'static/brand/posthog-logo-white@2x.png')
     const logoData = fs.existsSync(logoPath) ? fs.readFileSync(logoPath).toString('base64') : ''
     const logoImage = logoData
         ? `<image href="data:image/png;base64,${logoData}" x="560" y="1890" width="480" height="92" preserveAspectRatio="xMidYMid meet" opacity="0.72" />`
         : `<text x="800" y="1950" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="800" fill="#cfd9e8">PostHog</text>`
+    const labelLine = editionLabel
+        ? `<text x="800" y="1040" text-anchor="middle" font-family="Arial, sans-serif" font-size="68" font-weight="500" fill="#cfd9e8" opacity="0.85">${escapeHtml(editionLabel)}</text>`
+        : ''
     return `<svg width="1600" height="2560" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <linearGradient id="cover" x1="0" x2="0" y1="0" y2="1">
@@ -185,17 +189,21 @@ function getCoverSvg() {
   <rect x="230" y="220" width="1140" height="2100" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
   <text x="800" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">PostHog</text>
   <text x="800" y="880" text-anchor="middle" font-family="Arial, sans-serif" font-size="124" font-weight="700" fill="#ffffff">Handbook</text>
+  ${labelLine}
   ${logoImage}
   <text x="800" y="2200" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff" opacity="0.58">Unofficial EPUB conversion</text>
 </g>
 </svg>`
 }
 
-async function writeCoverAssets(outputDir, epubRoot) {
-    const coverBuffer = await sharp(Buffer.from(getCoverSvg())).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
-    const epubManifestHref = `assets/cover/${COVER_FILE_NAME}`
+async function writeCoverAssets(outputDir, epubRoot, edition) {
+    if (!edition || !edition.coverFileName) {
+        throw new Error('writeCoverAssets requires an edition with a coverFileName')
+    }
+    const coverBuffer = await sharp(Buffer.from(getCoverSvg(edition.label))).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
+    const epubManifestHref = `assets/cover/${edition.coverFileName}`
     writeFile(path.join(epubRoot, 'OEBPS', epubManifestHref), coverBuffer)
-    writeFile(path.join(outputDir, COVER_FILE_NAME), coverBuffer)
+    writeFile(path.join(outputDir, edition.coverFileName), coverBuffer)
     return {
         manifestHref: epubManifestHref,
         mediaType: 'image/jpeg',
@@ -203,8 +211,33 @@ async function writeCoverAssets(outputDir, epubRoot) {
     }
 }
 
+function buildHeadersFile(editions) {
+    const epubRules = editions
+        .map(
+            (edition) => `/${edition.epubFileName}
+  Content-Type: application/epub+zip
+  Cache-Control: public, max-age=3600`
+        )
+        .join('\n\n')
+    const coverRules = editions
+        .map(
+            (edition) => `/${edition.coverFileName}
+  Cache-Control: public, max-age=86400`
+        )
+        .join('\n\n')
+    return `/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+${epubRules}
+
+${coverRules}
+`
+}
+
 module.exports = {
     buildBookCss,
+    buildHeadersFile,
     buildNav,
     buildOpf,
     escapeHtml,

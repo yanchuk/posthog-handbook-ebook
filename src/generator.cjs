@@ -5,27 +5,18 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const {
-    COVER_FILE_NAME,
     DEFAULT_OUTPUT_DIR,
-    EPUB_FILE_NAME,
-    HANDBOOK_DIR,
-    POSTHOG_SITE_DIR,
-    PROJECT_ROOT,
     PUBLIC_PAGE_URL,
 } = require('./config.cjs')
 const { buildCoverPage, buildCreditsPage, buildLandingPage } = require('./pages.cjs')
 const {
-    discoverHandbookFiles,
-    fileFromSlug,
     getChapterHref,
     getOrderedChapters,
-    slugFromFile,
     uniqueOrdered,
 } = require('./source.cjs')
 const {
     extractFrontmatter,
     markdownToXhtml,
-    renderImage,
     renderMarkdownTable,
 } = require('./markdown.cjs')
 const {
@@ -40,6 +31,7 @@ const {
 } = require('./assets.cjs')
 const {
     buildBookCss,
+    buildHeadersFile,
     buildNav,
     buildOpf,
     escapeHtml,
@@ -49,15 +41,23 @@ const {
     writeCoverAssets,
     writeFile,
 } = require('./epub.cjs')
+const {
+    filterChaptersForEdition,
+    getEditionConfig,
+    listEditionIds,
+} = require('./editions.cjs')
 
-async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit } = {}) {
-    const chapters = getOrderedChapters(limit)
+async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit, edition } = {}) {
+    if (!edition) throw new Error('buildEpub requires an edition (use buildAllEditions to build every edition)')
+
+    const allChapters = getOrderedChapters(limit)
+    const chapters = filterChaptersForEdition(allChapters, edition)
     const slugToHref = new Map(chapters.map((chapter) => [chapter.slug, chapter.href]))
-    const epubRoot = path.join(outputDir, 'epub-root')
+    const epubRoot = path.join(outputDir, `epub-root-${edition.id}`)
     const assets = new Map()
     const diagrams = new Map()
     const generatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
-    fs.rmSync(outputDir, { recursive: true, force: true })
+    fs.rmSync(epubRoot, { recursive: true, force: true })
     fs.mkdirSync(epubRoot, { recursive: true })
 
     writeFile(path.join(epubRoot, 'mimetype'), 'application/epub+zip')
@@ -71,17 +71,20 @@ async function buildEpub({ outputDir = DEFAULT_OUTPUT_DIR, limit } = {}) {
 </container>
 `
     )
-    writeFile(
-        path.join(epubRoot, 'OEBPS/styles/book.css'),
-        buildBookCss()
-    )
-    const coverAsset = await writeCoverAssets(outputDir, epubRoot)
+    writeFile(path.join(epubRoot, 'OEBPS/styles/book.css'), buildBookCss())
+    const coverAsset = await writeCoverAssets(outputDir, epubRoot, edition)
     const extraDocuments = [
         { id: 'cover', href: 'cover.xhtml' },
         { id: 'credits', href: 'credits.xhtml' },
     ]
-    writeFile(path.join(epubRoot, 'OEBPS/cover.xhtml'), pageTemplate({ title: 'PostHog Handbook Cover', body: buildCoverPage(COVER_FILE_NAME) }))
-    writeFile(path.join(epubRoot, 'OEBPS/credits.xhtml'), pageTemplate({ title: 'About this Ebook', body: buildCreditsPage(generatedAt) }))
+    writeFile(
+        path.join(epubRoot, 'OEBPS/cover.xhtml'),
+        pageTemplate({ title: `PostHog Handbook Cover — ${edition.label}`, body: buildCoverPage(edition.coverFileName, edition.label) })
+    )
+    writeFile(
+        path.join(epubRoot, 'OEBPS/credits.xhtml'),
+        pageTemplate({ title: 'About this Ebook', body: buildCreditsPage(generatedAt, edition.label) })
+    )
 
     for (const chapter of chapters) {
         const markdown = fs.readFileSync(chapter.sourcePath, 'utf8')
@@ -109,7 +112,8 @@ ${rewriteLinks(markdownToXhtml(body, { sourcePath: chapter.sourcePath, materiali
             renderedChapters,
             generatedAt,
             [coverAsset, ...materializedAssets.values(), ...materializedDiagrams.values()].filter((asset) => asset.mediaType),
-            extraDocuments
+            extraDocuments,
+            { title: edition.opfTitle, bookId: `posthog-handbook-${edition.id}` }
         )
     )
 
@@ -127,61 +131,85 @@ ${rewriteLinks(markdownToXhtml(body, { sourcePath: chapter.sourcePath, materiali
     collectFiles(path.join(epubRoot, 'OEBPS'))
     const validation = validateGeneratedEpubStructure(generatedFiles)
     if (validation.errors.length) {
-        throw new Error(`Generated EPUB validation failed:\n${validation.errors.join('\n')}`)
+        throw new Error(`Generated EPUB validation failed for ${edition.id}:\n${validation.errors.join('\n')}`)
     }
 
-    const epubPath = path.join(outputDir, EPUB_FILE_NAME)
+    const epubPath = path.join(outputDir, edition.epubFileName)
+    fs.rmSync(epubPath, { force: true })
     childProcess.execFileSync('zip', ['-X0', epubPath, 'mimetype'], { cwd: epubRoot, stdio: 'ignore' })
     childProcess.execFileSync('zip', ['-Xr9D', epubPath, 'META-INF', 'OEBPS'], { cwd: epubRoot, stdio: 'ignore' })
 
-    const manifest = {
-        title: 'PostHog Handbook',
+    return {
+        edition: edition.id,
+        label: edition.label,
+        opfTitle: edition.opfTitle,
+        epubFileName: edition.epubFileName,
+        coverFileName: edition.coverFileName,
         generatedAt,
         chapters: renderedChapters.length,
         output: epubPath,
     }
-    writeFile(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
+async function buildAllEditions({ outputDir = DEFAULT_OUTPUT_DIR, limit, only } = {}) {
+    fs.rmSync(outputDir, { recursive: true, force: true })
+    fs.mkdirSync(outputDir, { recursive: true })
+
+    const ids = only ? [only] : listEditionIds()
+    const results = []
+    for (const id of ids) {
+        const edition = getEditionConfig(id)
+        results.push(await buildEpub({ outputDir, limit, edition }))
+    }
+
+    const generatedAt = results[0]?.generatedAt || new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const landingCover = results[0]?.coverFileName || 'posthog-handbook-full-cover.jpg'
+
     writeFile(
         path.join(outputDir, 'index.html'),
         buildLandingPage({
             generatedAt,
-            chapters: renderedChapters.length,
-            epubFileName: EPUB_FILE_NAME,
-            coverFileName: COVER_FILE_NAME,
+            editions: results,
+            coverFileName: landingCover,
             pageUrl: PUBLIC_PAGE_URL,
         })
     )
-    writeFile(
-        path.join(outputDir, '_headers'),
-        `/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
 
-/${EPUB_FILE_NAME}
-  Content-Type: application/epub+zip
-  Cache-Control: public, max-age=3600
+    writeFile(path.join(outputDir, '_headers'), buildHeadersFile(results))
 
-/${COVER_FILE_NAME}
-  Cache-Control: public, max-age=86400
-`
-    )
+    const manifest = {
+        title: 'PostHog Handbook',
+        generatedAt,
+        editions: results.map((r) => ({
+            id: r.edition,
+            label: r.label,
+            chapters: r.chapters,
+            epubFileName: r.epubFileName,
+            coverFileName: r.coverFileName,
+        })),
+    }
+    writeFile(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+
     return manifest
 }
 
 function parseArgs(argv) {
-    const args = { outputDir: DEFAULT_OUTPUT_DIR, limit: undefined }
+    const args = { outputDir: DEFAULT_OUTPUT_DIR, limit: undefined, only: undefined }
     for (let index = 0; index < argv.length; index += 1) {
         const arg = argv[index]
         if (arg === '--output-dir') args.outputDir = path.resolve(argv[++index])
         if (arg === '--limit') args.limit = Number(argv[++index])
+        if (arg === '--edition') args.only = argv[++index]
     }
     return args
 }
 
 if (require.main === module) {
-    buildEpub(parseArgs(process.argv.slice(2))).then((manifest) => {
-    console.log(`Built ${manifest.chapters} chapters`)
-    console.log(manifest.output)
+    buildAllEditions(parseArgs(process.argv.slice(2))).then((manifest) => {
+        console.log(`Built ${manifest.editions.length} edition(s):`)
+        for (const edition of manifest.editions) {
+            console.log(`  - ${edition.label} (${edition.chapters} chapters): ${edition.epubFileName}`)
+        }
     })
 }
 
@@ -191,6 +219,7 @@ module.exports = {
     buildCoverPage,
     buildCreditsPage,
     buildEpub,
+    buildAllEditions,
     buildLandingPage,
     buildOpf,
     getChapterHref,

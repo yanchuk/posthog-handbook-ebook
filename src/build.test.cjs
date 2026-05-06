@@ -51,18 +51,24 @@ test('adds cover and credits documents to the OPF before handbook chapters', () 
     assert.match(opf, /<itemref idref="cover" \/>\s*<itemref idref="credits" \/>\s*<itemref idref="chapter-1" \/>/)
 })
 
-test('builds a static landing page with download, credits, and share links', () => {
+test('builds a static landing page with both editions, credits, and share links', () => {
     const html = buildLandingPage({
         generatedAt: '2026-05-05T20:45:00Z',
-        chapters: 313,
-        epubFileName: 'posthog-handbook-full-preview.epub',
-        coverFileName: 'posthog-handbook-cover.jpg',
+        editions: [
+            { id: 'full', label: 'Full Edition', chapters: 313, epubFileName: 'posthog-handbook-full.epub' },
+            { id: 'short', label: 'Short Edition', chapters: 70, epubFileName: 'posthog-handbook-short.epub' },
+        ],
+        coverFileName: 'posthog-handbook-full-cover.jpg',
         pageUrl: 'https://posthog-handbook-ebook.ianchuk.com',
     })
 
     assert.match(html, /PostHog Handbook Ebook/)
-    assert.match(html, /href="\.\/posthog-handbook-full-preview\.epub"/)
-    assert.match(html, /Download EPUB/)
+    assert.match(html, /href="\.\/posthog-handbook-full\.epub"/)
+    assert.match(html, /href="\.\/posthog-handbook-short\.epub"/)
+    assert.match(html, /Download Full Edition/)
+    assert.match(html, /Download Short Edition/)
+    assert.match(html, /313/)
+    assert.match(html, /70/)
     assert.match(html, /Thanks to the PostHog team for the handbook\. All rights belong to them\./)
     assert.match(html, /https:\/\/posthog\.com\/handbook/)
     assert.match(html, /https:\/\/github\.com\/yanchuk\/posthog-handbook-ebook/)
@@ -703,4 +709,64 @@ test('filterChaptersForEdition for short returns chapters in input order, not al
     const result = filterChaptersForEdition(chapters, short).map((c) => c.slug)
     // Result should match input order (reversed allowlist)
     assert.deepEqual(result, [...short.slugAllowlist].reverse())
+})
+
+test('buildCoverPage embeds the edition label', () => {
+    const { buildCoverPage } = require('./pages.cjs')
+    const fullCover = buildCoverPage('posthog-handbook-full-cover.jpg', 'Full Edition')
+    const shortCover = buildCoverPage('posthog-handbook-short-cover.jpg', 'Short Edition')
+    assert.match(fullCover, /Full Edition/)
+    assert.match(shortCover, /Short Edition/)
+    assert.match(fullCover, /posthog-handbook-full-cover\.jpg/)
+    assert.match(shortCover, /posthog-handbook-short-cover\.jpg/)
+})
+
+test('buildCreditsPage embeds the edition label when supplied', () => {
+    const { buildCreditsPage } = require('./pages.cjs')
+    const withLabel = buildCreditsPage('2026-05-06T10:00:00Z', 'Short Edition')
+    const withoutLabel = buildCreditsPage('2026-05-06T10:00:00Z')
+    assert.match(withLabel, /Short Edition/)
+    assert.doesNotMatch(withoutLabel, /Edition/)
+})
+
+test('buildHeadersFile emits content-type and cache rules per edition', () => {
+    const { buildHeadersFile } = require('./epub.cjs')
+    const text = buildHeadersFile([
+        { epubFileName: 'posthog-handbook-full.epub', coverFileName: 'posthog-handbook-full-cover.jpg' },
+        { epubFileName: 'posthog-handbook-short.epub', coverFileName: 'posthog-handbook-short-cover.jpg' },
+    ])
+    assert.match(text, /X-Content-Type-Options: nosniff/)
+    assert.match(text, /\/posthog-handbook-full\.epub/)
+    assert.match(text, /\/posthog-handbook-short\.epub/)
+    assert.match(text, /\/posthog-handbook-full-cover\.jpg/)
+    assert.match(text, /\/posthog-handbook-short-cover\.jpg/)
+    assert.match(text, /Content-Type: application\/epub\+zip/)
+    assert.match(text, /Cache-Control: public, max-age=3600/)
+    assert.match(text, /Cache-Control: public, max-age=86400/)
+})
+
+test('buildOpf accepts a custom title and book id', () => {
+    const opf = buildOpf(
+        [{ id: 'chapter-1', href: 'chapters/example.xhtml' }],
+        '2026-05-06T10:00:00Z',
+        [],
+        [],
+        { title: 'PostHog Handbook: Short Edition', bookId: 'posthog-handbook-short' }
+    )
+    assert.match(opf, /<dc:title>PostHog Handbook: Short Edition<\/dc:title>/)
+    assert.match(opf, /<dc:identifier id="book-id">posthog-handbook-short<\/dc:identifier>/)
+})
+
+test('parseArgs reads --edition flag', () => {
+    const { parseArgs } = require('./generator.cjs')
+    assert.equal(parseArgs(['--edition', 'short']).only, 'short')
+    assert.equal(parseArgs(['--edition', 'full']).only, 'full')
+    assert.equal(parseArgs([]).only, undefined)
+})
+
+test('buildAllEditions is exported from generator and build', () => {
+    const gen = require('./generator.cjs')
+    const build = require('./build.cjs')
+    assert.equal(typeof gen.buildAllEditions, 'function')
+    assert.equal(typeof build.buildAllEditions, 'function')
 })

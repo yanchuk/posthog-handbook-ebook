@@ -14,10 +14,11 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;')
 }
 
-function buildCreditsPage(generatedAt) {
+function buildCreditsPage(generatedAt, editionLabel = '') {
+    const labelLine = editionLabel ? `<p class="edition-label">${escapeHtml(editionLabel)}</p>\n` : ''
     return `<section class="credits-page">
 <h1>PostHog Handbook</h1>
-<p><a href="${ORIGINAL_HANDBOOK_URL}">Original handbook</a></p>
+${labelLine}<p><a href="${ORIGINAL_HANDBOOK_URL}">Original handbook</a></p>
 <p>Thanks to the PostHog team for the handbook. All rights belong to them.</p>
 <dl>
   <dt>Converted to Ebook by ${CONVERTER_NAME}</dt>
@@ -30,13 +31,21 @@ function buildCreditsPage(generatedAt) {
 </section>`
 }
 
-function buildCoverPage(coverFileName) {
-    return `<section class="cover-page"><img src="assets/cover/${escapeHtml(coverFileName)}" alt="PostHog Handbook cover" /></section>`
+function buildCoverPage(coverFileName, editionLabel = '') {
+    const label = editionLabel ? `<p class="cover-edition-label">${escapeHtml(editionLabel)}</p>` : ''
+    return `<section class="cover-page"><img src="assets/cover/${escapeHtml(coverFileName)}" alt="PostHog Handbook cover" />${label}</section>`
 }
 
-function buildLandingPage({ generatedAt, chapters, epubFileName, coverFileName, pageUrl }) {
+function buildLandingPage({ generatedAt, editions, coverFileName, pageUrl }) {
     const shareText = encodeURIComponent('PostHog Handbook Ebook')
     const shareUrl = encodeURIComponent(pageUrl)
+    const downloads = editions
+        .map(
+            (edition) => `      <a class="download" href="./${escapeHtml(edition.epubFileName)}">Download ${escapeHtml(edition.label)}</a>
+      <p class="download-meta">${Number(edition.chapters).toLocaleString('en-US')} chapters</p>`
+        )
+        .join('\n')
+
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -53,7 +62,8 @@ function buildLandingPage({ generatedAt, chapters, epubFileName, coverFileName, 
     h1 { font-size: clamp(2.5rem, 7vw, 5.8rem); line-height: 0.94; margin: 0 0 1rem; letter-spacing: 0; }
     p { font-size: 1.08rem; line-height: 1.65; margin: 0 0 1rem; color: var(--muted); }
     a { color: var(--ink); }
-    .download { display: inline-flex; align-items: center; justify-content: center; min-height: 3.25rem; padding: 0 1.2rem; margin: 1rem 0 1.25rem; border-radius: 6px; background: var(--accent); color: white; font-weight: 800; text-decoration: none; }
+    .download { display: inline-flex; align-items: center; justify-content: center; min-height: 3.25rem; padding: 0 1.2rem; margin: 0.5rem 0.75rem 0.25rem 0; border-radius: 6px; background: var(--accent); color: white; font-weight: 800; text-decoration: none; }
+    .download-meta { margin: 0 0 0.75rem; font-size: 0.9rem; }
     .meta { display: grid; gap: 0.45rem; margin: 1.25rem 0; padding: 1rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--muted); }
     .share { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; }
     .share a { border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.75rem; text-decoration: none; background: white; }
@@ -66,9 +76,8 @@ function buildLandingPage({ generatedAt, chapters, epubFileName, coverFileName, 
     <section>
       <h1>PostHog Handbook Ebook</h1>
       <p>A reflowable EPUB conversion of the public PostHog Handbook for offline reading in Apple Books, Kindle, and other ebook readers.</p>
-      <a class="download" href="./${escapeHtml(epubFileName)}">Download EPUB</a>
+${downloads}
       <div class="meta">
-        <span>${Number(chapters).toLocaleString('en-US')} handbook chapters</span>
         <span>Updated ${escapeHtml(generatedAt)}</span>
         <span><a href="${ORIGINAL_HANDBOOK_URL}">Original PostHog Handbook</a></span>
       </div>
